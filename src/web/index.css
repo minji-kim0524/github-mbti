@@ -1,0 +1,24 @@
+/* Pretendard 가변 폰트 (한글은 동적 서브셋으로 필요한 글자만 로드) */
+@import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
+
+:root {
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  color: #24292f;
+  background: #f7f6fb;
+}
+body { margin: 0; }
+/* 입력란·버튼은 기본적으로 폰트를 상속하지 않으므로 명시 */
+input, button, textarea, select { font-family: inherit; }
+main { max-width: 640px; margin: 0 auto; padding: 40px 16px; }
+h1 { color: #6f42c1; margin-bottom: 8px; }
+h2 { font-size: 16px; margin-top: 28px; }
+.desc { color: #57606a; margin-top: 0; line-height: 1.6; }
+.desc small { color: #8c959f; }
+form { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 24px; }
+input { flex: 1 1 200px; padding: 10px 12px; font-size: 15px; border: 1px solid #d0d7de; border-radius: 8px; }
+select { padding: 10px; font-size: 14px; border: 1px solid #d0d7de; border-radius: 8px; background: #fff; }
+button { padding: 10px 16px; font-size: 14px; border: 0; border-radius: 8px; background: #6f42c1; color: #fff; cursor: pointer; }
+button:disabled { opacity: 0.5; cursor: default; }
+.card { display: block; max-width: 100%; margin-top: 24px; }
+pre { background: #fff; border: 1px solid #d0d7de; padding: 12px; border-radius: 8px; white-space: pre-wrap; word-break: break-all; font-size: 12px; }
+.error { color: #cf222e; }
