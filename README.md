@@ -9,7 +9,7 @@ GitHub 공개 활동을 분석해 4글자 개발자 유형을 카드로 보여 �
 1. 아래 코드를 복사합니다.
 
    ```html
-   <a href="https://github-mbti-dun.vercel.app"><img src="https://github-mbti-dun.vercel.app/api/card/{githubID}?tz=auto" alt="깃허브 MBTI" /></a>
+   <a href="https://github-mbti-whoami.vercel.app"><img src="https://github-mbti-whoami.vercel.app/api/card/{githubID}?tz=auto" alt="깃허브 MBTI" /></a>
    ```
 
 2. `{githubID}`를 내 GitHub 아이디로 바꿉니다.
@@ -23,7 +23,7 @@ GitHub 공개 활동을 분석해 4글자 개발자 유형을 카드로 보여 �
 
 - 서버·CI·컨테이너에서 커밋하면 시간대가 `UTC`로 잡힐 수 있어요. 카드 하단에 감지된 시간대가 표시되니, 실제와 다르면 `tz`를 직접 지정하세요.
 - 카드는 12시간 동안 캐싱되므로 새 커밋이 바로 반영되지는 않아요.
-- [웹 페이지](https://github-mbti-dun.vercel.app)에서 아이디를 입력하면 붙여 넣기 전에 카드를 미리 볼 수 있어요.
+- [웹 페이지](https://github-mbti-whoami.vercel.app)에서 아이디를 입력하면 붙여 넣기 전에 카드를 미리 볼 수 있어요.
 
 ## 4가지 축 (초안)
 

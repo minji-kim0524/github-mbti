@@ -11,7 +11,7 @@ GitHub 공개 활동(커밋 시각·잔디·언어·협업)을 분석해 4글자
 GitHub 프로필 README는 JS를 실행하지 않으므로, github-readme-stats처럼 **서버가 동적 SVG 카드를 생성**한다.
 
 ```md
-<a href="https://github-mbti-dun.vercel.app"><img src="https://github-mbti-dun.vercel.app/api/card/{githubID}?tz=auto" alt="깃허브 MBTI" /></a>
+<a href="https://github-mbti-whoami.vercel.app"><img src="https://github-mbti-whoami.vercel.app/api/card/{githubID}?tz=auto" alt="깃허브 MBTI" /></a>
 ```
 
 - `GET /api/card/:user?tz=` → MBTI 카드 SVG
