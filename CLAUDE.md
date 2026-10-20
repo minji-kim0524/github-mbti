@@ -11,17 +11,18 @@ GitHub 공개 활동(커밋 시각·잔디·언어·협업)을 분석해 4글자
 GitHub 프로필 README는 JS를 실행하지 않으므로, github-readme-stats처럼 **서버가 동적 SVG 카드를 생성**한다.
 
 ```md
-<a href="https://<도메인>"><img src="https://<도메인>/api/card/<user>?tz=Asia/Seoul" alt="깃허브 MBTI" /></a>
+<a href="https://<도메인>"><img src="https://<도메인>/api/card/{githubID}?tz=auto" alt="깃허브 MBTI" /></a>
 ```
 
-- `GET /api/card/:user?tz=` → MBTI 카드 SVG (tz 기본값 `Asia/Seoul`)
+- `GET /api/card/:user?tz=` → MBTI 카드 SVG
+- `tz=auto` 또는 생략 시 커밋 시각(`author.date`)의 오프셋으로 시간대를 **자동 감지**한다. 지정하면 그 IANA 시간대로 변환해 판정한다. 커밋 시각 데이터가 없으면 `Asia/Seoul`.
 - `GET /api/mbti/:user?tz=` → 판정 결과 JSON (웹 랜딩에서 사용)
 
 ## MBTI 4축 (초안 — 이름·기준 추후 변경 예정)
 
 | 축 | 글자 | 기준 | GraphQL 데이터 |
 | --- | --- | --- | --- |
-| 시간 | N 새벽형 / D 아침형 | `tz` 기준 20~05시 커밋 비율 ≥ 40% → N | 상위 5개 저장소 `history(author: {id})` 의 `author.date` (GitTimestamp, UTC 미변환) |
+| 시간 | N 새벽형 / D 아침형 | 20~05시 커밋 비율 ≥ 40% → N (자동 감지면 커밋별 현지 시각, `tz` 지정 시 그 시간대 기준) | 상위 5개 저장소 `history(author: {id})` 의 `author.date` (GitTimestamp, UTC 미변환) |
 | 리듬 | S 꾸준형 / B 몰아치기형 | 1년 중 기여한 날 비율 ≥ 35% → S | `contributionCalendar` |
 | 범위 | F 한 우물형 / E 잡식형 | 커밋한 날 수로 가중한 최다 언어 비율 ≥ 60% → F | `commitContributionsByRepository` 의 `primaryLanguage` |
 | 협업 | L 솔로형 / T 협업형 | 남의 저장소 커밋 비율 ≥ 25% 또는 PR+리뷰 ≥ 30 → T | 저장소 `owner`, `totalPullRequest(Review)Contributions` |
@@ -48,7 +49,7 @@ Next.js·모노레포는 쓰지 않는다 (SSR 이점이 없고, 패키지 하�
 
 ```
 index.html, vite.config.ts   Vite 진입점 (dev 서버가 /api 를 8787 로 프록시)
-src/web/       랜딩: 아이디·시간대 입력 → 카드 미리보기 + README 스니펫
+src/web/       랜딩: README 스니펫 템플릿({githubID}, tz) 복사 + 아이디 입력 시 카드 미리보기
 src/server/
   app.ts       Hono 라우트, 메모리 캐시, AppType export
   github.ts    GraphQL 쿼리 2개 (기여 내역 / 상위 저장소 커밋 시각)

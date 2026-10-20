@@ -66,12 +66,13 @@ export function renderCard(result: MbtiResult): string {
   })
 
   const height = top + result.axes.length * 40 + 24
+  const timeZoneNote = result.timeZoneAutoDetected ? `시간대 자동 감지 (${result.timeZone})` : result.timeZone
   const body = [
     `<text x="${PADDING}" y="32" class="title">${title}</text>`,
     `<text x="${PADDING}" y="76" class="type">${escapeXml(result.type)}</text>`,
     `<text x="${PADDING}" y="98" class="nickname">${escapeXml(result.nickname)}</text>`,
     ...rows,
-    `<text x="${WIDTH - PADDING}" y="${height - 12}" class="footer" text-anchor="end">*최근 1년 공개 커밋 기준 · ${escapeXml(result.timeZone)}</text>`,
+    `<text x="${WIDTH - PADDING}" y="${height - 12}" class="footer" text-anchor="end">*최근 1년 공개 커밋 기준 · ${escapeXml(timeZoneNote)}</text>`,
   ].join('\n  ')
 
   return frame(height, title, body)

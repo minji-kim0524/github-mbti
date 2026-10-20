@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { validator } from 'hono/validator'
-import { analyze, DEFAULT_TIME_ZONE, isValidTimeZone } from './analyze.js'
+import { analyze, isValidTimeZone } from './analyze.js'
 import { renderCard, renderErrorCard } from './card.js'
 import { fetchGitHubActivity, GitHubUserNotFoundError, type GitHubActivity } from './github.js'
 
@@ -14,6 +14,9 @@ const ERROR_CACHE_CONTROL = 'public, max-age=300'
 
 // 서버 메모리 캐시 (login 소문자 → 조회 결과). 같은 사용자의 동시 요청은 하나의 Promise 를 공유한다.
 const UNMEASURABLE_MESSAGE = '최근 1년 공개 활동이 없어 MBTI를 측정할 수 없어요.'
+
+/** 시간대를 커밋 시각으로 자동 감지하라는 tz 값 */
+const AUTO_TIME_ZONE = 'auto'
 
 class MissingTokenError extends Error {}
 
@@ -39,9 +42,10 @@ type Outcome =
   | { ok: false; status: 400 | 404 | 500; message: string }
 
 async function evaluate(user: string, tz: string | undefined): Promise<Outcome> {
-  const timeZone = tz || DEFAULT_TIME_ZONE
+  // tz=auto 이거나 생략(빈 값 포함)하면 커밋 시각의 오프셋으로 자동 감지한다
+  const timeZone = tz && tz.toLowerCase() !== AUTO_TIME_ZONE ? tz : undefined
   if (!GITHUB_LOGIN.test(user)) return { ok: false, status: 400, message: '올바른 GitHub 아이디가 아니에요.' }
-  if (!isValidTimeZone(timeZone)) return { ok: false, status: 400, message: `알 수 없는 시간대예요: ${timeZone}` }
+  if (timeZone && !isValidTimeZone(timeZone)) return { ok: false, status: 400, message: `알 수 없는 시간대예요: ${timeZone}` }
   try {
     return { ok: true, result: analyze(await getActivity(user), timeZone) }
   } catch (error) {

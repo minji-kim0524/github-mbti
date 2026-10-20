@@ -3,6 +3,7 @@ import type { GitHubActivity } from './github.js'
 // 개발자 MBTI 4축 판정 (초안). 축 이름·기준값은 추후 변경 예정이라 이 파일에 모아 둔다.
 // 순수 함수로만 구성해 GitHub API 없이도 테스트할 수 있게 한다.
 
+/** 커밋 시각 데이터가 없어 시간대를 감지할 수 없을 때 쓰는 기본값 */
 export const DEFAULT_TIME_ZONE = 'Asia/Seoul'
 
 /** 새벽형으로 보는 시간대: 20:00 ~ 04:59 */
@@ -46,7 +47,10 @@ export type MbtiResult = {
   measurable: boolean
   type: string
   nickname: string
+  /** 판정에 쓴 시간대. 자동 감지면 가장 많이 쓴 오프셋 (예: "UTC+9"), 지정했다면 IANA 이름 */
   timeZone: string
+  /** tz 를 지정하지 않아 커밋 시각의 오프셋으로 판정했는지 */
+  timeZoneAutoDetected: boolean
   axes: Axis[]
 }
 
@@ -69,8 +73,54 @@ function hourIn(timestamp: string, timeZone: string): number | null {
   return Number(hour)
 }
 
-function timeAxis(activity: GitHubActivity, timeZone: string): Axis {
-  const hours = activity.commitTimestamps.map((t) => hourIn(t, timeZone)).filter((h): h is number => h !== null)
+// GitTimestamp 는 UTC 로 변환되지 않고 작성자의 오프셋을 유지한다 (예: 2026-10-18T23:14:58+09:00).
+// 따라서 문자열의 시(hour)가 곧 작성자의 현지 시각이다.
+const GIT_TIMESTAMP = /T(\d{2}):\d{2}(?::\d{2}(?:\.\d+)?)?(Z|[+-]\d{2}:?\d{2})$/
+
+type LocalTime = { hour: number; offset: string }
+
+function parseLocalTime(timestamp: string): LocalTime | null {
+  const match = GIT_TIMESTAMP.exec(timestamp)
+  if (!match?.[1] || !match[2]) return null
+  const raw = match[2]
+  const offset = raw === 'Z' ? '+00:00' : raw.includes(':') ? raw : `${raw.slice(0, 3)}:${raw.slice(3)}`
+  return { hour: Number(match[1]), offset }
+}
+
+/** "+09:00" → "UTC+9", "+05:30" → "UTC+5:30", "+00:00" → "UTC" */
+function offsetLabel(offset: string): string {
+  const sign = offset[0]
+  const hours = Number(offset.slice(1, 3))
+  const minutes = offset.slice(4, 6)
+  if (hours === 0 && minutes === '00') return 'UTC'
+  return `UTC${sign}${hours}${minutes === '00' ? '' : `:${minutes}`}`
+}
+
+/** 가장 많이 쓴 오프셋. 동률이면 먼저 나온(최근) 쪽을 고른다. */
+function dominantOffset(times: LocalTime[]): string | null {
+  const counts = new Map<string, number>()
+  for (const { offset } of times) counts.set(offset, (counts.get(offset) ?? 0) + 1)
+  let best: string | null = null
+  let bestCount = 0
+  for (const [offset, count] of counts) {
+    if (count > bestCount) {
+      best = offset
+      bestCount = count
+    }
+  }
+  return best
+}
+
+/** 커밋마다 판정에 쓸 현지 시(hour). tz 가 없으면 각 커밋의 자기 오프셋 기준 시각을 쓴다. */
+function commitHours(activity: GitHubActivity, timeZone: string | undefined): number[] {
+  const hours = timeZone
+    ? activity.commitTimestamps.map((t) => hourIn(t, timeZone))
+    : activity.commitTimestamps.map((t) => parseLocalTime(t)?.hour ?? null)
+  return hours.filter((h): h is number => h !== null)
+}
+
+function timeAxis(activity: GitHubActivity, timeZone: string | undefined): Axis {
+  const hours = commitHours(activity, timeZone)
   const night = hours.filter((h) => h >= NIGHT_START_HOUR || h < NIGHT_END_HOUR).length
   const ratio = hours.length ? night / hours.length : 0
   const isNight = ratio >= THRESHOLDS.night
@@ -162,14 +212,21 @@ const NICKNAME_PARTS: Record<string, string> = {
   T: '팀 플레이어',
 }
 
-export function analyze(activity: GitHubActivity, timeZone = DEFAULT_TIME_ZONE): MbtiResult {
-  const axes = [timeAxis(activity, timeZone), rhythmAxis(activity), scopeAxis(activity), collabAxis(activity)]
+/**
+ * @param timeZone IANA 시간대. 생략하면 커밋 시각의 오프셋으로 자동 감지한다.
+ */
+export function analyze(activity: GitHubActivity, timeZone?: string): MbtiResult {
+  const offset = timeZone ? null : dominantOffset(activity.commitTimestamps.map(parseLocalTime).filter((t) => t !== null))
+  // 자동 감지할 커밋 시각이 없으면 기본 시간대로 판정한다
+  const effectiveTimeZone = timeZone ?? (offset ? undefined : DEFAULT_TIME_ZONE)
+  const axes = [timeAxis(activity, effectiveTimeZone), rhythmAxis(activity), scopeAxis(activity), collabAxis(activity)]
   return {
     login: activity.login,
     measurable: activity.calendar.some((d) => d.count > 0) || activity.commitTimestamps.length > 0,
     type: axes.map((a) => a.letter).join(''),
     nickname: axes.map((a) => NICKNAME_PARTS[a.letter]).join(' '),
-    timeZone,
+    timeZone: offset ? offsetLabel(offset) : (timeZone ?? DEFAULT_TIME_ZONE),
+    timeZoneAutoDetected: offset !== null,
     axes,
   }
 }

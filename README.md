@@ -4,15 +4,32 @@
 
 GitHub 공개 활동을 분석해 4글자 개발자 유형을 카드로 보여 줍니다. 프로필 README에 이미지로 붙여 넣을 수 있어요.
 
-```md
-<a href="https://<도메인>"><img src="https://<도메인>/api/card/<GitHub 아이디>?tz=Asia/Seoul" alt="깃허브 MBTI" /></a>
-```
+## 사용 방법
+
+1. 아래 코드를 복사합니다.
+
+   ```html
+   <a href="https://<도메인>"><img src="https://<도메인>/api/card/{githubID}?tz=auto" alt="깃허브 MBTI" /></a>
+   ```
+
+2. `{githubID}`를 내 GitHub 아이디로 바꿉니다.
+3. 필요하면 `tz` 값을 바꿉니다 (아래 표 참고).
+4. 내 프로필 README(`<아이디>/<아이디>` 저장소의 `README.md`)에 붙여 넣으면 카드가 표시됩니다.
+
+| `tz` 값 | 동작 |
+| --- | --- |
+| `auto` (기본) | 커밋 시각에 기록된 시간대(오프셋)로 자동 감지해요. 생략해도 같아요. |
+| `Asia/Seoul`, `America/New_York` 등 | 모든 커밋을 그 시간대로 바꿔서 판정해요. [IANA 시간대 이름](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)을 넣어 주세요. |
+
+- 서버·CI·컨테이너에서 커밋하면 시간대가 `UTC`로 잡힐 수 있어요. 카드 하단에 감지된 시간대가 표시되니, 실제와 다르면 `tz`를 직접 지정하세요.
+- 카드는 12시간 동안 캐싱되므로 새 커밋이 바로 반영되지는 않아요.
+- 웹 페이지(`https://<도메인>`)에서 아이디를 입력하면 붙여 넣기 전에 카드를 미리 볼 수 있어요.
 
 ## 4가지 축 (초안)
 
 | 축 | 유형 | 측정 기준 |
 | --- | --- | --- |
-| 시간 | **N** 새벽형 / **D** 아침형 | 커밋 시각 (`tz` 파라미터 기준, 기본 `Asia/Seoul`) |
+| 시간 | **N** 새벽형 / **D** 아침형 | 커밋 시각 (자동 감지, `tz` 파라미터로 지정 가능) |
 | 리듬 | **S** 꾸준형 / **B** 몰아치기형 | 1년 중 기여한 날의 비율 |
 | 범위 | **F** 한 우물형 / **E** 잡식형 | 커밋한 저장소의 언어 집중도 |
 | 협업 | **L** 솔로형 / **T** 협업형 | 남의 저장소 커밋 비율, PR·리뷰 수 |
@@ -34,7 +51,7 @@ pnpm dev
 
 - 웹: http://localhost:5173 (`/api` 요청은 API 서버로 프록시)
 - API: http://localhost:8787
-- 카드 예시: http://localhost:5173/api/card/octocat?tz=Asia/Seoul
+- 카드 예시: http://localhost:5173/api/card/torvalds?tz=auto
 
 ## 환경변수
 
