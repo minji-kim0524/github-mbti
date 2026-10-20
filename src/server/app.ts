@@ -13,6 +13,8 @@ const CARD_CACHE_CONTROL = 'public, max-age=43200, s-maxage=86400, stale-while-r
 const ERROR_CACHE_CONTROL = 'public, max-age=300'
 
 // 서버 메모리 캐시 (login 소문자 → 조회 결과). 같은 사용자의 동시 요청은 하나의 Promise 를 공유한다.
+const UNMEASURABLE_MESSAGE = '최근 1년 공개 활동이 없어 MBTI를 측정할 수 없어요.'
+
 class MissingTokenError extends Error {}
 
 const activityCache = new Map<string, { expiresAt: number; promise: Promise<GitHubActivity> }>()
@@ -80,6 +82,10 @@ const app = new Hono()
     if (!outcome.ok) {
       c.header('Cache-Control', ERROR_CACHE_CONTROL)
       return c.body(renderErrorCard(outcome.message))
+    }
+    if (!outcome.result.measurable) {
+      c.header('Cache-Control', ERROR_CACHE_CONTROL)
+      return c.body(renderErrorCard(UNMEASURABLE_MESSAGE))
     }
     c.header('Cache-Control', CARD_CACHE_CONTROL)
     return c.body(renderCard(outcome.result))

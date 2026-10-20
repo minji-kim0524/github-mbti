@@ -42,6 +42,8 @@ export type Axis = {
 
 export type MbtiResult = {
   login: string
+  /** 최근 1년 공개 활동이 하나도 없으면 false (유형을 판정하지 않음) */
+  measurable: boolean
   type: string
   nickname: string
   timeZone: string
@@ -164,6 +166,7 @@ export function analyze(activity: GitHubActivity, timeZone = DEFAULT_TIME_ZONE):
   const axes = [timeAxis(activity, timeZone), rhythmAxis(activity), scopeAxis(activity), collabAxis(activity)]
   return {
     login: activity.login,
+    measurable: activity.calendar.some((d) => d.count > 0) || activity.commitTimestamps.length > 0,
     type: axes.map((a) => a.letter).join(''),
     nickname: axes.map((a) => NICKNAME_PARTS[a.letter]).join(' '),
     timeZone,
