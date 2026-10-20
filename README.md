@@ -9,7 +9,7 @@ GitHub 공개 활동을 분석해 4글자 개발자 유형을 카드로 보여 �
 1. 아래 코드를 복사합니다.
 
    ```html
-   <a href="https://<도메인>"><img src="https://<도메인>/api/card/{githubID}?tz=auto" alt="깃허브 MBTI" /></a>
+   <a href="https://github-mbti-dun.vercel.app"><img src="https://github-mbti-dun.vercel.app/api/card/{githubID}?tz=auto" alt="깃허브 MBTI" /></a>
    ```
 
 2. `{githubID}`를 내 GitHub 아이디로 바꿉니다.
@@ -23,7 +23,7 @@ GitHub 공개 활동을 분석해 4글자 개발자 유형을 카드로 보여 �
 
 - 서버·CI·컨테이너에서 커밋하면 시간대가 `UTC`로 잡힐 수 있어요. 카드 하단에 감지된 시간대가 표시되니, 실제와 다르면 `tz`를 직접 지정하세요.
 - 카드는 12시간 동안 캐싱되므로 새 커밋이 바로 반영되지는 않아요.
-- 웹 페이지(`https://<도메인>`)에서 아이디를 입력하면 붙여 넣기 전에 카드를 미리 볼 수 있어요.
+- [웹 페이지](https://github-mbti-dun.vercel.app)에서 아이디를 입력하면 붙여 넣기 전에 카드를 미리 볼 수 있어요.
 
 ## 4가지 축 (초안)
 
@@ -68,7 +68,7 @@ pnpm dev
 
 1. [Vercel](https://vercel.com/new)에서 이 GitHub 저장소를 Import 합니다 (빌드 설정은 `vercel.json`이 지정).
 2. Project Settings → Environment Variables 에 `GITHUB_TOKEN`을 추가합니다.
-3. 배포가 끝나면 README의 `<도메인>`을 실제 주소로 바꿉니다.
+3. 배포가 끝나면 README의 카드 주소를 실제 도메인으로 바꿉니다.
 
 이후 `main`에 push 하면 자동으로 다시 배포됩니다.
 
