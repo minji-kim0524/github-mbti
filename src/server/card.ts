@@ -12,7 +12,7 @@ export function escapeXml(value: string): string {
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
 }
 
-const WIDTH = 600
+const WIDTH = 700
 const PADDING = 24
 // README 이미지는 웹폰트를 불러올 수 없으므로 시스템 폰트로 대체된다
 const FONT = `Pretendard, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif`
@@ -41,7 +41,7 @@ function frame(height: number, title: string, body: string): string {
     text { font-family: ${FONT}; fill: ${COLORS.text}; }
     .title { font-size: 14px; font-weight: 600; fill: ${COLORS.muted}; }
     .nickname { font-size: 18px; font-weight: 700; }
-    .side { font-size: 13px; fill: ${COLORS.muted}; }
+    .side { font-size: 12px; fill: ${COLORS.muted}; }
     .side.on { fill: ${COLORS.accent}; font-weight: 700; }
     .evidence { font-size: 11px; fill: ${COLORS.muted}; }
     .footer { font-size: 10px; fill: ${COLORS.muted}; }
