@@ -6,7 +6,7 @@ import type { GitHubActivity } from './github.js'
 /** 커밋 시각 데이터가 없어 시간대를 감지할 수 없을 때 쓰는 기본값 */
 export const DEFAULT_TIME_ZONE = 'Asia/Seoul'
 
-/** 새벽형으로 보는 시간대: 20:00 ~ 04:59 */
+/** 새벽커밋형으로 보는 시간대: 20:00 ~ 04:59 */
 const NIGHT_START_HOUR = 20
 const NIGHT_END_HOUR = 5
 
@@ -28,7 +28,7 @@ export type Axis = {
   label: string
   /** 판정된 글자 */
   letter: string
-  /** 판정된 쪽 이름 (예: "새벽형") */
+  /** 판정된 쪽 이름 (예: "새벽커밋형") */
   trait: string
   /** 왼쪽·오른쪽 끝 이름 (카드 막대 표시용) */
   left: { letter: string; name: string }
@@ -128,9 +128,9 @@ function timeAxis(activity: GitHubActivity, timeZone: string | undefined): Axis 
     key: 'time',
     label: '시간',
     letter: isNight ? 'N' : 'D',
-    trait: isNight ? '새벽형' : '아침형',
-    left: { letter: 'N', name: '새벽형' },
-    right: { letter: 'D', name: '아침형' },
+    trait: isNight ? '새벽커밋형' : '오전배포형',
+    left: { letter: 'N', name: '새벽커밋형' },
+    right: { letter: 'D', name: '오전배포형' },
     score: ratio,
     evidence: hours.length ? `${percent(ratio)} (새벽 20~05시 커밋)` : '커밋 시각 데이터 부족',
     insufficient: hours.length === 0,
@@ -146,9 +146,9 @@ function rhythmAxis(activity: GitHubActivity): Axis {
     key: 'rhythm',
     label: '리듬',
     letter: isSteady ? 'S' : 'B',
-    trait: isSteady ? '꾸준형' : '몰아치기형',
-    left: { letter: 'S', name: '꾸준형' },
-    right: { letter: 'B', name: '몰아치기형' },
+    trait: isSteady ? '성실한 농부형' : '몰아치는 파도형',
+    left: { letter: 'S', name: '성실한 농부형' },
+    right: { letter: 'B', name: '몰아치는 파도형' },
     score: ratio,
     evidence: `${percent(ratio)} (1년 중 ${active}일 기여)`,
     insufficient: active === 0,
@@ -169,9 +169,9 @@ function scopeAxis(activity: GitHubActivity): Axis {
     key: 'scope',
     label: '범위',
     letter: isFocus ? 'F' : 'E',
-    trait: isFocus ? '한 우물형' : '잡식형',
-    left: { letter: 'F', name: '한 우물형' },
-    right: { letter: 'E', name: '잡식형' },
+    trait: isFocus ? '원툴장인형' : '멀티언어형',
+    left: { letter: 'F', name: '원툴장인형' },
+    right: { letter: 'E', name: '멀티언어형' },
     score: ratio,
     evidence: total ? `${percent(ratio)} (${topLanguage} · 언어 ${weights.size}개)` : '언어 데이터 부족',
     insufficient: total === 0,
@@ -191,9 +191,9 @@ function collabAxis(activity: GitHubActivity): Axis {
     key: 'collab',
     label: '협업',
     letter: isTeam ? 'T' : 'L',
-    trait: isTeam ? '협업형' : '솔로형',
-    left: { letter: 'L', name: '솔로형' },
-    right: { letter: 'T', name: '협업형' },
+    trait: isTeam ? '오픈소스 메이트형' : '솔로 플레이어형',
+    left: { letter: 'L', name: '솔로 플레이어형' },
+    right: { letter: 'T', name: '오픈소스 메이트형' },
     score: 1 - otherRatio,
     evidence: `${percent(otherRatio)} (남의 저장소 커밋 · PR ${activity.totals.pullRequests} · 리뷰 ${activity.totals.reviews})`,
     insufficient: total === 0 && teamActivity === 0,
