@@ -11,7 +11,9 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
-    "types": ["node", "vite/client"]
+    // typeRoots 를 명시해 두면 다른 위치의 tsconfig 가 이 파일을 extends 해도(Vercel 빌드) @types 를 찾을 수 있다
+    "typeRoots": ["./node_modules/@types"],
+    "types": ["node"]
   },
   "include": ["api", "src", "vite.config.ts"]
 }
