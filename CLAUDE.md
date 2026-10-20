@@ -43,12 +43,14 @@ Next.js·모노레포는 쓰지 않는다 (SSR 이점이 없고, 패키지 하�
 | GitHub API | `@octokit/graphql` (서버 토큰 `GITHUB_TOKEN`) |
 | 타입 공유 | Hono RPC (`hono/client` + `AppType`) |
 | 폰트 | Pretendard (웹). SVG 카드는 웹폰트를 못 쓰므로 시스템 폰트로 대체 |
-| 배포 | Vercel(정적 + Functions) 또는 Cloudflare — 미확정 |
+| 배포 | Vercel — Vite 정적 빌드(`dist`) + Vercel Function(`api/index.ts`) |
 
 ## 구조
 
 ```
 index.html, vite.config.ts   Vite 진입점 (dev 서버가 /api 를 8787 로 프록시)
+vercel.json    Vercel 설정 (/api/* → api/index.ts 로 rewrite)
+api/index.ts   Vercel Function 진입점 (src/server/app.ts 를 default export)
 src/web/       랜딩: README 스니펫 템플릿({githubID}, tz) 복사 + 아이디 입력 시 카드 미리보기
 src/server/
   app.ts       Hono 라우트, 메모리 캐시, AppType export

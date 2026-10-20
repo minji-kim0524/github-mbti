@@ -62,6 +62,16 @@ pnpm dev
 | `GITHUB_TOKEN` | 예 | GitHub GraphQL API 호출용 토큰. [Fine-grained token](https://github.com/settings/personal-access-tokens/new)을 **권한 없이(Public repositories 읽기 전용)** 발급하면 됩니다. |
 | `PORT` | 아니오 | API 서버 포트 (기본값 `8787`) |
 
+## 배포 (Vercel)
+
+`vite build` 결과(`dist`)는 정적 파일로, `api/index.ts`는 Vercel Function으로 배포됩니다. 설정은 `vercel.json`에 있습니다.
+
+1. [Vercel](https://vercel.com/new)에서 이 GitHub 저장소를 Import 합니다 (빌드 설정은 `vercel.json`이 지정).
+2. Project Settings → Environment Variables 에 `GITHUB_TOKEN`을 추가합니다.
+3. 배포가 끝나면 README의 `<도메인>`을 실제 주소로 바꿉니다.
+
+이후 `main`에 push 하면 자동으로 다시 배포됩니다.
+
 ### API 사용량
 
 GitHub GraphQL API는 무료이며, 토큰당 **시간당 5,000포인트**의 한도가 있습니다. 사용자 1명 분석에 약 7포인트를 쓰고, 결과를 12시간 동안 캐싱합니다.
