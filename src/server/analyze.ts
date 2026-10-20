@@ -35,7 +35,7 @@ export type Axis = {
   right: { letter: string; name: string }
   /** 왼쪽 성향 비율 0~1 */
   score: number
-  /** 판정 근거 한 줄 */
+  /** 판정 근거 한 줄. "71% (새벽 20~05시 커밋)" 처럼 비율을 먼저 쓰고 설명은 괄호에 넣는다 */
   evidence: string
   /** 데이터가 부족해 기본값으로 판정했는지 */
   insufficient: boolean
@@ -132,7 +132,7 @@ function timeAxis(activity: GitHubActivity, timeZone: string | undefined): Axis 
     left: { letter: 'N', name: '새벽형' },
     right: { letter: 'D', name: '아침형' },
     score: ratio,
-    evidence: hours.length ? `새벽(20~05시) 커밋 ${percent(ratio)}` : '커밋 시각 데이터 부족',
+    evidence: hours.length ? `${percent(ratio)} (새벽 20~05시 커밋)` : '커밋 시각 데이터 부족',
     insufficient: hours.length === 0,
   }
 }
@@ -150,7 +150,7 @@ function rhythmAxis(activity: GitHubActivity): Axis {
     left: { letter: 'S', name: '꾸준형' },
     right: { letter: 'B', name: '몰아치기형' },
     score: ratio,
-    evidence: `1년 중 ${active}일 기여 (${percent(ratio)})`,
+    evidence: `${percent(ratio)} (1년 중 ${active}일 기여)`,
     insufficient: active === 0,
   }
 }
@@ -173,7 +173,7 @@ function scopeAxis(activity: GitHubActivity): Axis {
     left: { letter: 'F', name: '한 우물형' },
     right: { letter: 'E', name: '잡식형' },
     score: ratio,
-    evidence: total ? `${topLanguage} ${percent(ratio)} · 언어 ${weights.size}개` : '언어 데이터 부족',
+    evidence: total ? `${percent(ratio)} (${topLanguage} · 언어 ${weights.size}개)` : '언어 데이터 부족',
     insufficient: total === 0,
   }
 }
@@ -195,7 +195,7 @@ function collabAxis(activity: GitHubActivity): Axis {
     left: { letter: 'L', name: '솔로형' },
     right: { letter: 'T', name: '협업형' },
     score: 1 - otherRatio,
-    evidence: `남의 저장소 커밋 ${percent(otherRatio)} · PR ${activity.totals.pullRequests} · 리뷰 ${activity.totals.reviews}`,
+    evidence: `${percent(otherRatio)} (남의 저장소 커밋 · PR ${activity.totals.pullRequests} · 리뷰 ${activity.totals.reviews})`,
     insufficient: total === 0 && teamActivity === 0,
   }
 }
