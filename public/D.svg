@@ -1,0 +1,98 @@
+<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="50" height="50" rx="25" fill="white" fill-opacity="0.1"/>
+<g filter="url(#filter1_f_2032_79)">
+<path d="M25 33.7083C29.8095 33.7083 33.7083 29.8095 33.7083 25C33.7083 20.1905 29.8095 16.2917 25 16.2917C20.1905 16.2917 16.2917 20.1905 16.2917 25C16.2917 29.8095 20.1905 33.7083 25 33.7083Z" stroke-width="2" stroke="#231815"/>
+<g clip-path="url(#clip0_2032_79)">
+<path d="M39.8333 25.2083H37.0833" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#F25022"/>
+</g>
+<g clip-path="url(#clip1_2032_79)">
+<path d="M12.9167 25.2083H10.1667" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#F25022"/>
+</g>
+<g clip-path="url(#clip2_2032_79)">
+<path d="M39.8333 25.2083H37.0833" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#231815"/>
+</g>
+<g clip-path="url(#clip3_2032_79)">
+<path d="M12.9167 25.2083H10.1667" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#231815"/>
+</g>
+<g clip-path="url(#clip4_2032_79)">
+<path d="M37.7419 32.5971L35.3603 31.2221" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#231815"/>
+</g>
+<g clip-path="url(#clip5_2032_79)">
+<path d="M14.4314 19.1388L12.0498 17.7638" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#231815"/>
+</g>
+<g clip-path="url(#clip6_2032_79)">
+<path d="M32.2362 37.9502L30.8612 35.5687" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#231815"/>
+</g>
+<g clip-path="url(#clip7_2032_79)">
+<path d="M18.7779 14.6397L17.4029 12.2581" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#231815"/>
+</g>
+<g clip-path="url(#clip8_2032_79)">
+<path d="M24.7917 39.8333L24.7917 37.0833" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#231815"/>
+</g>
+<g clip-path="url(#clip9_2032_79)">
+<path d="M24.7917 12.9167L24.7917 10.1667" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#231815"/>
+</g>
+<g clip-path="url(#clip10_2032_79)">
+<path d="M17.4029 37.7419L18.7779 35.3603" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#231815"/>
+</g>
+<g clip-path="url(#clip11_2032_79)">
+<path d="M30.8612 14.4313L32.2362 12.0498" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#231815"/>
+</g>
+<g clip-path="url(#clip12_2032_79)">
+<path d="M12.0498 32.2362L14.4314 30.8612" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#231815"/>
+</g>
+<g clip-path="url(#clip13_2032_79)">
+<path d="M35.3603 18.7779L37.7419 17.4029" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="#231815"/>
+</g>
+<path d="M32.9167 25C32.9167 29.3723 29.3723 32.9167 25 32.9167C20.6277 32.9167 17.0833 29.3723 17.0833 25C17.0833 20.6278 20.6277 17.0833 25 17.0833C29.3723 17.0833 32.9167 20.6278 32.9167 25Z" fill="#FFB900"/>
+</g>
+<defs>
+<filter id="filter1_f_2032_79" x="5" y="5" width="40" height="40" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="0.5" result="effect1_foregroundBlur_2032_79"/>
+</filter>
+<clipPath id="clip0_2032_79">
+<rect x="35.2917" y="23.4167" width="6.33333" height="3.16667" rx="1.58333" fill="white"/>
+</clipPath>
+<clipPath id="clip1_2032_79">
+<rect x="8.375" y="23.4167" width="6.33333" height="3.16667" rx="1.58333" fill="white"/>
+</clipPath>
+<clipPath id="clip2_2032_79">
+<rect x="35.2917" y="23.4167" width="6.33333" height="3.16667" rx="1.58333" fill="white"/>
+</clipPath>
+<clipPath id="clip3_2032_79">
+<rect x="8.375" y="23.4167" width="6.33333" height="3.16667" rx="1.58333" fill="white"/>
+</clipPath>
+<clipPath id="clip4_2032_79">
+<rect x="34.7045" y="28.7746" width="6.33333" height="3.16667" rx="1.58333" transform="rotate(30 34.7045 28.7746)" fill="white"/>
+</clipPath>
+<clipPath id="clip5_2032_79">
+<rect x="11.394" y="15.3163" width="6.33333" height="3.16667" rx="1.58333" transform="rotate(30 11.394 15.3163)" fill="white"/>
+</clipPath>
+<clipPath id="clip6_2032_79">
+<rect x="31.517" y="33.1212" width="6.33333" height="3.16667" rx="1.58333" transform="rotate(60 31.517 33.1212)" fill="white"/>
+</clipPath>
+<clipPath id="clip7_2032_79">
+<rect x="18.0587" y="9.81065" width="6.33333" height="3.16667" rx="1.58333" transform="rotate(60 18.0587 9.81065)" fill="white"/>
+</clipPath>
+<clipPath id="clip8_2032_79">
+<rect x="26.5833" y="35.2917" width="6.33333" height="3.16667" rx="1.58333" transform="rotate(90 26.5833 35.2917)" fill="white"/>
+</clipPath>
+<clipPath id="clip9_2032_79">
+<rect x="26.5833" y="8.375" width="6.33333" height="3.16667" rx="1.58333" transform="rotate(90 26.5833 8.375)" fill="white"/>
+</clipPath>
+<clipPath id="clip10_2032_79">
+<rect x="21.2254" y="34.7045" width="6.33333" height="3.16667" rx="1.58333" transform="rotate(120 21.2254 34.7045)" fill="white"/>
+</clipPath>
+<clipPath id="clip11_2032_79">
+<rect x="34.6837" y="11.394" width="6.33333" height="3.16667" rx="1.58333" transform="rotate(120 34.6837 11.394)" fill="white"/>
+</clipPath>
+<clipPath id="clip12_2032_79">
+<rect x="16.8788" y="31.517" width="6.33333" height="3.16667" rx="1.58333" transform="rotate(150 16.8788 31.517)" fill="white"/>
+</clipPath>
+<clipPath id="clip13_2032_79">
+<rect x="40.1893" y="18.0587" width="6.33333" height="3.16667" rx="1.58333" transform="rotate(150 40.1893 18.0587)" fill="white"/>
+</clipPath>
+</defs>
+</svg>
