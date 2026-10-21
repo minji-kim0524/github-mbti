@@ -14,6 +14,8 @@ export type GitHubActivity = {
   totals: {
     commits: number
     pullRequests: number
+    /** 내 소유가 아닌 저장소(팀 저장소)에 낸 PR 수. 내 저장소에 혼자 낸 PR 은 협업 근거에서 뺀다 */
+    teamPullRequests: number
     reviews: number
     issues: number
     /** 비공개 저장소 기여 수 (상세는 볼 수 없음) */
@@ -47,6 +49,10 @@ type ContributionsResponse = {
       commitContributionsByRepository: {
         contributions: { totalCount: number }
         repository: { name: string; isFork: boolean; owner: { login: string }; primaryLanguage: { name: string } | null }
+      }[]
+      pullRequestContributionsByRepository: {
+        contributions: { totalCount: number }
+        repository: { owner: { login: string } }
       }[]
     }
   } | null
@@ -85,6 +91,16 @@ const CONTRIBUTIONS_QUERY = /* GraphQL */ `
             }
             primaryLanguage {
               name
+            }
+          }
+        }
+        pullRequestContributionsByRepository(maxRepositories: 25) {
+          contributions(first: 1) {
+            totalCount
+          }
+          repository {
+            owner {
+              login
             }
           }
         }
@@ -171,6 +187,9 @@ export async function fetchGitHubActivity(login: string, token: string): Promise
     totals: {
       commits: collection.totalCommitContributions,
       pullRequests: collection.totalPullRequestContributions,
+      teamPullRequests: collection.pullRequestContributionsByRepository
+        .filter((item) => item.repository.owner.login.toLowerCase() !== user.login.toLowerCase())
+        .reduce((sum, item) => sum + item.contributions.totalCount, 0),
       reviews: collection.totalPullRequestReviewContributions,
       issues: collection.totalIssueContributions,
       restricted: collection.restrictedContributionsCount,

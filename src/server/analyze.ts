@@ -17,9 +17,9 @@ const THRESHOLDS = {
   steady: 0.35,
   /** 가장 많이 쓴 언어 비율이 이 이상이면 F */
   focus: 0.6,
-  /** 남의 저장소 커밋 비율이 이 이상이면 T */
+  /** 팀 저장소(내 소유가 아닌 저장소) 커밋 비율이 이 이상이면 T */
   team: 0.25,
-  /** PR + 리뷰 수가 이 이상이면 T */
+  /** 팀 저장소에 낸 PR + 리뷰 수가 이 이상이면 T */
   teamActivity: 30,
 }
 
@@ -198,19 +198,20 @@ function collabAxis(activity: GitHubActivity): Axis {
     .filter((r) => r.owner.toLowerCase() !== login)
     .reduce((sum, r) => sum + r.commitDays, 0)
   const otherRatio = total ? others / total : 0
-  const teamActivity = activity.totals.pullRequests + activity.totals.reviews
+  // 내 저장소에 혼자 낸 PR 은 협업이 아니므로 팀 저장소 PR 만 센다. 리뷰는 항상 다른 사람의 PR 에 하는 것이라 모두 센다
+  const teamActivity = activity.totals.teamPullRequests + activity.totals.reviews
   const isTeam = otherRatio >= THRESHOLDS.team || teamActivity >= THRESHOLDS.teamActivity
-  const prReview = `PR ${activity.totals.pullRequests} · 리뷰 ${activity.totals.reviews}`
+  const prReview = `팀 PR ${activity.totals.teamPullRequests} · 리뷰 ${activity.totals.reviews}`
   return {
     key: 'collab',
     label: '협업',
     letter: isTeam ? 'T' : 'A',
-    trait: isTeam ? '오픈소스 메이트형' : '솔로 플레이어형',
+    trait: isTeam ? '팀 플레이어형' : '솔로 플레이어형',
     left: { letter: 'A', name: '솔로 플레이어형' },
-    right: { letter: 'T', name: '오픈소스 메이트형' },
+    right: { letter: 'T', name: '팀 플레이어형' },
     score: 1 - otherRatio,
     evidence: isTeam
-      ? `${percent(otherRatio)} (남의 저장소 커밋 · ${prReview})`
+      ? `${percent(otherRatio)} (팀 저장소 커밋 · ${prReview})`
       : `${percent(1 - otherRatio)} (내 저장소 커밋 · ${prReview})`,
     insufficient: total === 0 && teamActivity === 0,
   }
