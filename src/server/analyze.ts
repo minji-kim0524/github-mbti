@@ -35,7 +35,10 @@ export type Axis = {
   right: { letter: string; name: string }
   /** 왼쪽 성향 비율 0~1 */
   score: number
-  /** 판정 근거 한 줄. "71% (새벽 20~05시 커밋)" 처럼 비율을 먼저 쓰고 설명은 괄호에 넣는다 */
+  /**
+   * 판정 근거 한 줄. "71% (새벽 20~05시 커밋)" 처럼 비율을 먼저 쓰고 설명은 괄호에 넣는다.
+   * 비율은 판정된 쪽 기준이라 카드에서 그쪽 끝부터 채우는 막대 길이와 같다.
+   */
   evidence: string
   /** 데이터가 부족해 기본값으로 판정했는지 */
   insufficient: boolean
@@ -132,7 +135,11 @@ function timeAxis(activity: GitHubActivity, timeZone: string | undefined): Axis 
     left: { letter: 'N', name: '새벽커밋형' },
     right: { letter: 'D', name: '오전배포형' },
     score: ratio,
-    evidence: hours.length ? `${percent(ratio)} (새벽 20~05시 커밋)` : '커밋 시각 데이터 부족',
+    evidence: !hours.length
+      ? '커밋 시각 데이터 부족'
+      : isNight
+        ? `${percent(ratio)} (새벽 20~05시 커밋)`
+        : `${percent(1 - ratio)} (오전·낮 05~20시 커밋)`,
     insufficient: hours.length === 0,
   }
 }
@@ -150,7 +157,9 @@ function rhythmAxis(activity: GitHubActivity): Axis {
     left: { letter: 'S', name: '성실한 농부형' },
     right: { letter: 'R', name: '몰아치는 파도형' },
     score: ratio,
-    evidence: `${percent(ratio)} (1년 중 ${active}일 기여)`,
+    evidence: isSteady
+      ? `${percent(ratio)} (1년 중 ${active}일 기여)`
+      : `${percent(1 - ratio)} (1년 중 ${days - active}일 쉬고 ${active}일 기여)`,
     insufficient: active === 0,
   }
 }
@@ -173,7 +182,11 @@ function scopeAxis(activity: GitHubActivity): Axis {
     left: { letter: 'F', name: '원툴장인형' },
     right: { letter: 'M', name: '멀티언어형' },
     score: ratio,
-    evidence: total ? `${percent(ratio)} (${topLanguage} · 언어 ${weights.size}개)` : '언어 데이터 부족',
+    evidence: !total
+      ? '언어 데이터 부족'
+      : isFocus
+        ? `${percent(ratio)} (${topLanguage} · 언어 ${weights.size}개)`
+        : `${percent(1 - ratio)} (${topLanguage} 외 언어 ${weights.size - 1}개)`,
     insufficient: total === 0,
   }
 }
@@ -187,6 +200,7 @@ function collabAxis(activity: GitHubActivity): Axis {
   const otherRatio = total ? others / total : 0
   const teamActivity = activity.totals.pullRequests + activity.totals.reviews
   const isTeam = otherRatio >= THRESHOLDS.team || teamActivity >= THRESHOLDS.teamActivity
+  const prReview = `PR ${activity.totals.pullRequests} · 리뷰 ${activity.totals.reviews}`
   return {
     key: 'collab',
     label: '협업',
@@ -195,7 +209,9 @@ function collabAxis(activity: GitHubActivity): Axis {
     left: { letter: 'A', name: '솔로 플레이어형' },
     right: { letter: 'T', name: '오픈소스 메이트형' },
     score: 1 - otherRatio,
-    evidence: `${percent(otherRatio)} (남의 저장소 커밋 · PR ${activity.totals.pullRequests} · 리뷰 ${activity.totals.reviews})`,
+    evidence: isTeam
+      ? `${percent(otherRatio)} (남의 저장소 커밋 · ${prReview})`
+      : `${percent(1 - otherRatio)} (내 저장소 커밋 · ${prReview})`,
     insufficient: total === 0 && teamActivity === 0,
   }
 }

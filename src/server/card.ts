@@ -81,7 +81,10 @@ export function renderCard(result: MbtiResult): string {
   const rows = result.axes.map((axis, i) => {
     const y = top + i * rowHeight
     const leftOn = axis.letter === axis.left.letter
-    const fill = Math.max(0, Math.min(1, axis.score)) * BAR_WIDTH
+    // 막대는 판정된 쪽 끝부터 그쪽 비율만큼 채운다 (근거 문구의 % 와 같은 값)
+    const share = Math.max(0, Math.min(1, leftOn ? axis.score : 1 - axis.score))
+    const fill = share * BAR_WIDTH
+    const fillX = leftOn ? BAR_X : BAR_X + BAR_WIDTH - fill
     const gap = ` dx="${EVIDENCE_GAP}"`
     const evidence = (dx: string) => `<tspan class="evidence"${dx}>${escapeXml(axis.evidence)}</tspan>`
     const label = (side: { letter: string; name: string }) => escapeXml(`${side.name}(${side.letter})`)
@@ -91,7 +94,7 @@ export function renderCard(result: MbtiResult): string {
     const rightLine = leftOn ? rightName : evidence('') + rightName
     return [
       `<rect x="${BAR_X}" y="${y}" width="${BAR_WIDTH}" height="10" rx="5" fill="${COLORS.track}"/>`,
-      `<rect x="${BAR_X}" y="${y}" width="${fill.toFixed(1)}" height="10" rx="5" fill="${COLORS.accent}"/>`,
+      `<rect x="${fillX.toFixed(1)}" y="${y}" width="${fill.toFixed(1)}" height="10" rx="5" fill="${COLORS.accent}"/>`,
       `<text x="${BAR_X}" y="${y + 28}">${leftLine}</text>`,
       `<text x="${BAR_X + BAR_WIDTH}" y="${y + 28}" text-anchor="end">${rightLine}</text>`,
     ].join('\n  ')
