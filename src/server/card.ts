@@ -1,4 +1,5 @@
 import type { MbtiResult } from './analyze.js'
+import { ICONS } from './icons.js'
 
 /** SVG(XML)에 넣는 모든 외부 입력은 반드시 이 함수를 거친다. */
 export function escapeXml(value: string): string {
@@ -24,6 +25,9 @@ const BAR_X = PADDING + LEFT_WIDTH + COLUMN_GAP
 const BAR_WIDTH = WIDTH - PADDING - BAR_X
 /** 성향 이름과 근거 문구 사이 간격(px) */
 const EVIDENCE_GAP = 4
+/** 왼쪽 2x2 아이콘 한 칸의 크기와 칸 사이 간격(px) */
+const ICON_SIZE = 84
+const ICON_GAP = 12
 
 const COLORS = {
   background: '#ffffff',
@@ -80,13 +84,22 @@ export function renderCard(result: MbtiResult): string {
   const rowsBottom = top + result.axes.length * rowHeight
   const height = rowsBottom + 28
   const centerX = PADDING + LEFT_WIDTH / 2
-  const radius = 80
   // 막대 영역(첫 막대 ~ 마지막 근거 줄)의 세로 가운데에 맞춘다
-  const imageY = (top + rowsBottom - rowHeight + 28) / 2
+  const centerY = (top + rowsBottom - rowHeight + 28) / 2
+  // 판정된 글자 아이콘을 축 순서대로 2x2 로 배치한다 (시간 · 리듬 / 범위 · 협업)
+  const gridSize = ICON_SIZE * 2 + ICON_GAP
+  const icons = result.axes.map((axis, i) => {
+    const x = centerX - gridSize / 2 + (i % 2) * (ICON_SIZE + ICON_GAP)
+    const y = centerY - gridSize / 2 + Math.floor(i / 2) * (ICON_SIZE + ICON_GAP)
+    const r = ICON_SIZE / 2
+    return [
+      `<circle cx="${x + r}" cy="${y + r}" r="${r}" fill="${COLORS.track}"/>`,
+      `<svg x="${x}" y="${y}" width="${ICON_SIZE}" height="${ICON_SIZE}" viewBox="0 0 50 50" fill="none">${ICONS[axis.letter] ?? ''}</svg>`,
+    ].join('\n  ')
+  })
   const timeZoneNote = result.timeZoneAutoDetected ? `시간대 자동 감지 (${result.timeZone})` : result.timeZone
   const body = [
-    // 캐릭터 이미지 자리 (이미지가 준비되면 이 원 안에 넣는다)
-    `<circle cx="${centerX}" cy="${imageY}" r="${radius}" fill="${COLORS.track}"/>`,
+    ...icons,
     ...rows,
     `<text x="${WIDTH - PADDING}" y="${height - 12}" class="footer" text-anchor="end">*최근 1년 공개 커밋 기준 · ${escapeXml(timeZoneNote)}</text>`,
   ].join('\n  ')
