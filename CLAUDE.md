@@ -71,7 +71,7 @@ pnpm build
 
 ## 규칙
 
-- SVG 응답에는 `Cache-Control` 을 명시한다. 카드는 길게(12시간), 오류 카드는 짧게(5분) — GitHub camo 캐싱과 rate limit 때문.
+- SVG 응답에는 `Cache-Control` 을 명시한다. 카드는 1시간(이후 하루 동안 stale-while-revalidate), 오류 카드는 5분 — GitHub camo 캐싱과 rate limit 때문.
 - README(camo)는 200 이 아니면 이미지를 깨뜨리므로, 카드 엔드포인트의 오류는 **200 + 오류 카드** 로 응답한다.
 - 외부 입력(GitHub 아이디, 이름, 언어명, tz 등)은 SVG에 넣기 전에 **반드시 XML 이스케이프** (`src/server/card.ts`의 `escapeXml`).
 - GraphQL 쿼리에 사용자 값을 문자열로 끼워 넣지 않는다. 항상 **변수**로 전달한다.

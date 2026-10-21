@@ -7,9 +7,10 @@ import { fetchGitHubActivity, GitHubUserNotFoundError, type GitHubActivity } fro
 // GitHub username 규칙: 영숫자와 하이픈, 최대 39자, 하이픈으로 시작 불가
 const GITHUB_LOGIN = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/
 
-/** GitHub API 결과 캐시 기간. MBTI 는 자주 바뀌지 않으므로 길게 잡아 rate limit 을 아낀다. */
-const CACHE_TTL_MS = 12 * 60 * 60 * 1000
-const CARD_CACHE_CONTROL = 'public, max-age=43200, s-maxage=86400, stale-while-revalidate=3600'
+/** GitHub API 결과 캐시 기간. 새 커밋이 1시간 안에 반영되게 하면서 rate limit 을 아낀다. */
+const CACHE_TTL_MS = 60 * 60 * 1000
+// 1시간 동안은 캐시를 그대로 쓰고, 그 뒤 하루 동안은 이전 카드를 바로 보여 주면서 뒤에서 새로 만든다
+const CARD_CACHE_CONTROL = 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400'
 const ERROR_CACHE_CONTROL = 'public, max-age=300'
 
 // 서버 메모리 캐시 (login 소문자 → 조회 결과). 같은 사용자의 동시 요청은 하나의 Promise 를 공유한다.
