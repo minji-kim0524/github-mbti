@@ -29,13 +29,14 @@ const EVIDENCE_GAP = 4
 const ICON_SIZE = 84
 const ICON_GAP = 12
 
+// 어두운 배경 위에 유리 효과 아이콘을 올리는 테마
 const COLORS = {
-  background: '#ffffff',
-  border: '#e4e2f0',
-  text: '#24292f',
-  muted: '#6e7781',
-  accent: '#6f42c1',
-  track: '#eeeaf7',
+  background: '#353535',
+  border: '#4a4a4a',
+  text: '#f2f2f2',
+  muted: '#a9a9a9',
+  accent: '#b197fc',
+  track: '#4a4a4a',
 }
 
 function frame(height: number, title: string, body: string): string {
@@ -49,7 +50,21 @@ function frame(height: number, title: string, body: string): string {
     .side.on { fill: ${COLORS.accent}; font-weight: 700; }
     .evidence { font-size: 11px; fill: ${COLORS.muted}; }
     .footer { font-size: 10px; fill: ${COLORS.muted}; }
+    .glass { fill: url(#glass-fill); stroke: url(#glass-stroke); stroke-width: 1.5; }
   </style>
+  <defs>
+    <!-- 유리 효과: 반투명 흰 면 + 대각선 양 끝이 밝은 테두리 -->
+    <linearGradient id="glass-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="glass-stroke" x1="0.9" y1="0" x2="0.1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.7"/>
+      <stop offset="0.4" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.7"/>
+    </linearGradient>
+  </defs>
   <rect x="0.5" y="0.5" width="${WIDTH - 1}" height="${height - 1}" rx="10" fill="${COLORS.background}" stroke="${COLORS.border}"/>
   ${body}
 </svg>`
@@ -69,8 +84,9 @@ export function renderCard(result: MbtiResult): string {
     const fill = Math.max(0, Math.min(1, axis.score)) * BAR_WIDTH
     const gap = ` dx="${EVIDENCE_GAP}"`
     const evidence = (dx: string) => `<tspan class="evidence"${dx}>${escapeXml(axis.evidence)}</tspan>`
-    const leftName = `<tspan class="side${leftOn ? ' on' : ''}">${escapeXml(axis.left.name)}</tspan>`
-    const rightName = `<tspan class="side${leftOn ? '' : ' on'}"${leftOn ? '' : gap}>${escapeXml(axis.right.name)}</tspan>`
+    const label = (side: { letter: string; name: string }) => escapeXml(`${side.name}(${side.letter})`)
+    const leftName = `<tspan class="side${leftOn ? ' on' : ''}">${label(axis.left)}</tspan>`
+    const rightName = `<tspan class="side${leftOn ? '' : ' on'}"${leftOn ? '' : gap}>${label(axis.right)}</tspan>`
     const leftLine = leftOn ? leftName + evidence(gap) : leftName
     const rightLine = leftOn ? rightName : evidence('') + rightName
     return [
@@ -93,7 +109,7 @@ export function renderCard(result: MbtiResult): string {
     const y = centerY - gridSize / 2 + Math.floor(i / 2) * (ICON_SIZE + ICON_GAP)
     const r = ICON_SIZE / 2
     return [
-      `<circle cx="${x + r}" cy="${y + r}" r="${r}" fill="${COLORS.track}"/>`,
+      `<circle cx="${x + r}" cy="${y + r}" r="${r - 1}" class="glass"/>`,
       `<svg x="${x}" y="${y}" width="${ICON_SIZE}" height="${ICON_SIZE}" viewBox="0 0 50 50" fill="none">${ICONS[axis.letter] ?? ''}</svg>`,
     ].join('\n  ')
   })
