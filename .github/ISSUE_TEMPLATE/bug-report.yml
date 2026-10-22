@@ -1,0 +1,37 @@
+name: 버그 신고
+description: 카드가 깨지거나, 웹 페이지·공유 기능이 제대로 동작하지 않을 때
+title: '[버그] '
+labels: [bug]
+body:
+  - type: dropdown
+    id: where
+    attributes:
+      label: 어디서 생긴 문제인가요?
+      options:
+        - 프로필 README 카드
+        - 웹 미리보기
+        - 이미지 저장 · 공유
+        - 기타
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: 카드 주소 또는 페이지 주소
+      placeholder: https://github-mbti-whoami.vercel.app/api/card/octocat?tz=auto
+  - type: textarea
+    id: what
+    attributes:
+      label: 어떤 문제가 있나요?
+      description: 화면에 보인 오류 문구나 스크린샷을 함께 올려 주시면 좋아요.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대한 동작
+  - type: input
+    id: env
+    attributes:
+      label: 브라우저 · 기기
+      placeholder: iPhone Safari, macOS Chrome 등

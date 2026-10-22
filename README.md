@@ -163,11 +163,17 @@ public/             유형 글자 아이콘
 
 이 프로젝트가 마음에 들었다면 오른쪽 위의 **⭐ Star**를 눌러 주세요. 다른 개발자들이 프로젝트를 발견하는 데 큰 힘이 돼요.
 
-개선에 참여하는 방법도 환영해요.
+개선 의견은 [이슈](https://github.com/minji-kim0524/github-mbti/issues/new/choose)로 받고 있어요. 양식을 고르면 필요한 내용을 쉽게 채울 수 있어요.
 
-- **판정이 내 실제 모습과 다르다면** 아이디와 함께 [이슈](https://github.com/minji-kim0524/github-mbti/issues)를 남겨 주세요. 기준값을 다듬는 데 가장 큰 도움이 돼요.
-- **유형 이름이나 별명 아이디어**도 이슈로 제안해 주세요.
-- **버그 수정이나 기능 추가**는 저장소를 Fork 한 뒤 Pull Request를 보내 주세요. 큰 변경은 먼저 이슈로 이야기해 주시면 좋아요.
+| 양식                                                                                               | 이럴 때 써 주세요                                            |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| [판정 피드백](https://github.com/minji-kim0524/github-mbti/issues/new?template=result-feedback.yml) | 받은 유형이 내 실제 모습과 달라요. 기준값을 다듬는 데 가장 큰 도움이 돼요. |
+| [버그 신고](https://github.com/minji-kim0524/github-mbti/issues/new?template=bug-report.yml)       | 카드가 깨지거나 웹 페이지·공유 기능이 제대로 동작하지 않아요. |
+| [아이디어 제안](https://github.com/minji-kim0524/github-mbti/issues/new?template=idea.yml)         | 유형 이름, 판정 기준, 카드 디자인, 새 기능 아이디어가 있어요. |
+
+> 지금은 이슈로만 의견을 받고 있어요. Pull Request는 받지 않으니 양해 부탁드려요.
+
+## Development
 
 ### 로컬 실행
 
@@ -196,11 +202,11 @@ pnpm dev
 | `GITHUB_TOKEN` | 예     | GitHub GraphQL API 호출용 토큰. [Fine-grained token](https://github.com/settings/personal-access-tokens/new)을 **권한 없이(Public repositories 읽기 전용)** 발급하면 됩니다. |
 | `PORT`         | 아니오 | API 서버 포트 (기본값 `8787`)                                                                                                                                                |
 
-### 직접 배포하기 (Vercel)
+### 배포 (Vercel)
 
 `vite build` 결과(`dist`)는 정적 파일로, `api/index.ts`는 Vercel Function으로 배포됩니다. 설정은 `vercel.json`에 있습니다.
 
-1. [Vercel](https://vercel.com/new)에서 Fork 한 저장소를 Import 합니다 (빌드 설정은 `vercel.json`이 지정).
+1. [Vercel](https://vercel.com/new)에서 이 저장소를 Import 합니다 (빌드 설정은 `vercel.json`이 지정).
 2. Project Settings → Environment Variables 에 `GITHUB_TOKEN`을 추가합니다.
 3. 배포가 끝나면 README의 카드 주소를 실제 도메인으로 바꿉니다.
 

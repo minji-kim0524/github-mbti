@@ -1,0 +1,24 @@
+name: 아이디어 제안
+description: 유형 이름, 판정 기준, 카드 디자인, 새 기능에 대한 아이디어
+title: '[제안] '
+labels: [enhancement]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 어떤 제안인가요?
+      options:
+        - 유형 이름 · 별명
+        - 판정 기준 · 새로운 축
+        - 카드 디자인
+        - 웹 페이지 · 공유 기능
+        - 기타
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: 제안 내용
+      description: 무엇을 어떻게 바꾸면 좋을지, 왜 그렇게 생각하는지 적어 주세요.
+    validations:
+      required: true

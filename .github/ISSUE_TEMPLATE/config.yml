@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 내 유형 먼저 확인하기
+    url: https://github-mbti-whoami.vercel.app
+    about: 웹에서 아이디만 입력하면 카드를 바로 볼 수 있어요.

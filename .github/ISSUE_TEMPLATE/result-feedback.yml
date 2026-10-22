@@ -1,0 +1,49 @@
+name: 판정 피드백
+description: 받은 유형이 내 실제 모습과 다르다면 알려 주세요. 판정 기준을 다듬는 데 쓰여요.
+title: '[판정] '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        어떤 축이 왜 다르다고 느꼈는지 알려 주시면 기준값을 다듬는 데 큰 도움이 돼요.
+        카드는 **최근 1년의 공개 활동**만 반영한다는 점도 함께 참고해 주세요.
+  - type: input
+    id: login
+    attributes:
+      label: GitHub 아이디
+      placeholder: octocat
+    validations:
+      required: true
+  - type: input
+    id: result
+    attributes:
+      label: 받은 유형
+      description: 카드나 웹 미리보기에 나온 유형을 적어 주세요.
+      placeholder: NSFA
+    validations:
+      required: true
+  - type: dropdown
+    id: axes
+    attributes:
+      label: 다르다고 느낀 축
+      multiple: true
+      options:
+        - 시간 (N 새벽커밋형 / D 오전배포형)
+        - 리듬 (S 성실한 농부형 / R 몰아치는 파도형)
+        - 범위 (F 원툴장인형 / M 멀티언어형)
+        - 협업 (A 솔로 플레이어형 / T 팀 플레이어형)
+    validations:
+      required: true
+  - type: textarea
+    id: reality
+    attributes:
+      label: 실제로는 어떤가요?
+      description: 예) 주로 밤에 커밋하는데 D 가 나왔어요. 회사 저장소는 비공개라 협업이 A 로 나와요.
+    validations:
+      required: true
+  - type: input
+    id: tz
+    attributes:
+      label: 사용한 tz 값
+      description: 카드 주소의 tz 값이나 카드 하단에 표시된 시간대를 적어 주세요.
+      placeholder: auto (UTC+9)
