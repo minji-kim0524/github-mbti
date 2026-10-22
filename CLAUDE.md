@@ -14,7 +14,7 @@ GitHub 프로필 README는 JS를 실행하지 않으므로, github-readme-stats�
 <a href="https://github-mbti-whoami.vercel.app"><img src="https://github-mbti-whoami.vercel.app/api/card/{githubID}?tz=auto" alt="깃허브 MBTI" /></a>
 ```
 
-- `GET /api/card/:user?tz=` → MBTI 카드 SVG
+- `GET /api/card/:user?tz=&layout=` → MBTI 카드 SVG. `layout=compact` 는 좁은 화면용 세로 배치(360px), 생략하면 가로 배치(700px). 웹 미리보기는 599px 이하 화면에서 compact 를 쓴다
 - `tz=auto` 또는 생략 시 커밋 시각(`author.date`)의 오프셋으로 시간대를 **자동 감지**한다. 지정하면 그 IANA 시간대로 변환해 판정한다. 커밋 시각 데이터가 없으면 `Asia/Seoul`.
 - `GET /api/mbti/:user?tz=` → 판정 결과 JSON (웹 랜딩에서 사용)
 
