@@ -40,6 +40,8 @@ export type Axis = {
    * 비율은 판정된 쪽 기준이라 카드에서 그쪽 끝부터 채우는 막대 길이와 같다.
    */
   evidence: string
+  /** 카드 막대 위 가운데에 쓰는 판정 기준 (예: "커밋시간대") */
+  criterion: string
   /** 데이터가 부족해 기본값으로 판정했는지 */
   insufficient: boolean
 }
@@ -129,6 +131,7 @@ function timeAxis(activity: GitHubActivity, timeZone: string | undefined): Axis 
   const isNight = ratio >= THRESHOLDS.night
   return {
     key: 'time',
+    criterion: '커밋시간대',
     label: '시간',
     letter: isNight ? 'N' : 'D',
     trait: isNight ? '새벽커밋형' : '오전배포형',
@@ -151,6 +154,7 @@ function rhythmAxis(activity: GitHubActivity): Axis {
   const isSteady = ratio >= THRESHOLDS.steady
   return {
     key: 'rhythm',
+    criterion: '기여빈도',
     label: '리듬',
     letter: isSteady ? 'S' : 'R',
     trait: isSteady ? '성실한 농부형' : '몰아치는 파도형',
@@ -176,6 +180,7 @@ function scopeAxis(activity: GitHubActivity): Axis {
   const isFocus = total === 0 || ratio >= THRESHOLDS.focus
   return {
     key: 'scope',
+    criterion: '언어집중도',
     label: '범위',
     letter: isFocus ? 'F' : 'M',
     trait: isFocus ? '원툴장인형' : '멀티언어형',
@@ -204,6 +209,7 @@ function collabAxis(activity: GitHubActivity): Axis {
   const prReview = `팀 PR ${activity.totals.teamPullRequests} · 리뷰 ${activity.totals.reviews}`
   return {
     key: 'collab',
+    criterion: '협업비중',
     label: '협업',
     letter: isTeam ? 'T' : 'A',
     trait: isTeam ? '팀 플레이어형' : '솔로 플레이어형',

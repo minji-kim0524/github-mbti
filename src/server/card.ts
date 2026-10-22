@@ -23,8 +23,9 @@ const COLUMN_GAP = 24
 const LEFT_WIDTH = Math.round((WIDTH - PADDING * 2) / 3)
 const BAR_X = PADDING + LEFT_WIDTH + COLUMN_GAP
 const BAR_WIDTH = WIDTH - PADDING - BAR_X
-/** 성향 이름과 근거 문구 사이 간격(px) */
-const EVIDENCE_GAP = 4
+/** 막대 두께와, 막대 양옆 비율 글자가 차지하는 폭(px, "100%" + 여백) */
+const BAR_HEIGHT = 10
+const RATE_WIDTH = 46
 /** 왼쪽 2x2 아이콘 한 칸의 크기와 칸 사이 간격(px) */
 const ICON_SIZE = 84
 const ICON_GAP = 12
@@ -35,8 +36,15 @@ const COLORS = {
   border: '#4a4a4a',
   text: '#f2f2f2',
   muted: '#a9a9a9',
-  accent: '#b197fc',
   track: '#4a4a4a',
+}
+
+// 축별 막대 색. 어두운 배경에서 잘 보이도록 밝은 톤을 쓰고, 서로 색상(hue)이 겹치지 않게 고른다
+const AXIS_COLORS: Record<MbtiResult['axes'][number]['key'], string> = {
+  time: '#b197fc',
+  rhythm: '#63e6be',
+  scope: '#ffd43b',
+  collab: '#74c0fc',
 }
 
 function frame(height: number, title: string, body: string): string {
@@ -47,8 +55,9 @@ function frame(height: number, title: string, body: string): string {
     .title { font-size: 14px; font-weight: 600; fill: ${COLORS.muted}; }
     .nickname { font-size: 18px; font-weight: 700; }
     .side { font-size: 12px; fill: ${COLORS.muted}; }
-    .side.on { fill: ${COLORS.accent}; font-weight: 700; }
-    .evidence { font-size: 11px; fill: ${COLORS.muted}; }
+    .side.on { font-weight: 700; }
+    .rate { font-size: 13px; font-weight: 700; fill: ${COLORS.muted}; }
+    .criterion { font-size: 12px; font-weight: 600; }
     .footer { font-size: 10px; fill: ${COLORS.muted}; }
     .glass { fill: url(#glass-fill); stroke: url(#glass-stroke); stroke-width: 1.5; }
   </style>
@@ -73,38 +82,54 @@ function frame(height: number, title: string, body: string): string {
 export function renderCard(result: MbtiResult): string {
   // 카드에 유형 글자를 따로 쓰지 않으므로 화면 낭독기용 제목에 유형을 넣어 둔다
   const title = `${escapeXml(result.login)}의 깃허브 MBTI: ${escapeXml(result.type)}`
-  const top = 32
-  const rowHeight = 52
+  const top = 36
+  const rowHeight = 72
 
-  // 막대 아래 줄: 양 끝에 성향 이름, 근거는 판정된 쪽 이름 옆에 붙인다.
-  // SVG 는 글자 폭을 잴 수 없으므로 이름과 근거를 한 <text> 안의 <tspan> 으로 이어 쓰고 dx 로 간격을 둔다.
+  // 한 축은 세 줄: 위 가운데에 판정 기준, 가운데에 비율 · 막대 · 비율, 아래 양 끝에 성향 이름.
+  // 비율과 이름은 양 끝에서 세로로 맞추고, 막대는 두 비율 사이에 그린다.
+  // 막대 색은 축마다 다르게 하고, 판정된 쪽 비율·이름도 같은 색으로 강조한다.
+  const trackX = BAR_X + RATE_WIDTH
+  const trackWidth = BAR_WIDTH - RATE_WIDTH * 2
   const rows = result.axes.map((axis, i) => {
     const y = top + i * rowHeight
+    const barY = y + 12
+    const color = AXIS_COLORS[axis.key]
     const leftOn = axis.letter === axis.left.letter
-    // 막대는 판정된 쪽 끝부터 그쪽 비율만큼 채운다 (근거 문구의 % 와 같은 값)
-    const share = Math.max(0, Math.min(1, leftOn ? axis.score : 1 - axis.score))
-    const fill = share * BAR_WIDTH
-    const fillX = leftOn ? BAR_X : BAR_X + BAR_WIDTH - fill
-    const gap = ` dx="${EVIDENCE_GAP}"`
-    const evidence = (dx: string) => `<tspan class="evidence"${dx}>${escapeXml(axis.evidence)}</tspan>`
-    const label = (side: { letter: string; name: string }) => escapeXml(`${side.name}(${side.letter})`)
-    const leftName = `<tspan class="side${leftOn ? ' on' : ''}">${label(axis.left)}</tspan>`
-    const rightName = `<tspan class="side${leftOn ? '' : ' on'}"${leftOn ? '' : gap}>${label(axis.right)}</tspan>`
-    const leftLine = leftOn ? leftName + evidence(gap) : leftName
-    const rightLine = leftOn ? rightName : evidence('') + rightName
+    const leftShare = Math.max(0, Math.min(1, axis.score))
+    // 막대는 판정된 쪽 끝부터 그쪽 비율만큼 채운다
+    const share = leftOn ? leftShare : 1 - leftShare
+    const fill = share * trackWidth
+    const fillX = leftOn ? trackX : trackX + trackWidth - fill
+    const percent = (value: number) => (axis.insufficient ? '-' : `${Math.round(value * 100)}%`)
+    const side = (s: { letter: string; name: string }, value: number, on: boolean, end: 'left' | 'right') => {
+      const x = end === 'left' ? BAR_X : BAR_X + BAR_WIDTH
+      const anchor = end === 'right' ? ' text-anchor="end"' : ''
+      const highlight = on ? ` style="fill: ${color}"` : ''
+      return [
+        // 비율 글자의 세로 가운데를 막대 가운데에 맞춘다
+        `<text x="${x}" y="${barY + BAR_HEIGHT / 2 + 5}"${anchor} class="rate"${highlight}>${percent(value)}</text>`,
+        `<text x="${x}" y="${barY + 30}"${anchor} class="side${on ? ' on' : ''}"${highlight}>${escapeXml(`${s.name}(${s.letter})`)}</text>`,
+      ].join('\n  ')
+    }
+    const criterion = axis.insufficient ? `${axis.criterion} · 데이터 부족` : axis.criterion
     return [
-      `<rect x="${BAR_X}" y="${y}" width="${BAR_WIDTH}" height="10" rx="5" fill="${COLORS.track}"/>`,
-      `<rect x="${fillX.toFixed(1)}" y="${y}" width="${fill.toFixed(1)}" height="10" rx="5" fill="${COLORS.accent}"/>`,
-      `<text x="${BAR_X}" y="${y + 28}">${leftLine}</text>`,
-      `<text x="${BAR_X + BAR_WIDTH}" y="${y + 28}" text-anchor="end">${rightLine}</text>`,
+      `<text x="${BAR_X + BAR_WIDTH / 2}" y="${y}" class="criterion" text-anchor="middle">${escapeXml(criterion)}</text>`,
+      // 채운 막대는 둥근 트랙 모양으로 잘라, 바깥 끝만 둥글고 채움이 끝나는 쪽은 각지게 한다
+      `<clipPath id="track-${i}"><rect x="${trackX}" y="${barY}" width="${trackWidth}" height="${BAR_HEIGHT}" rx="${BAR_HEIGHT / 2}"/></clipPath>`,
+      `<rect x="${trackX}" y="${barY}" width="${trackWidth}" height="${BAR_HEIGHT}" rx="${BAR_HEIGHT / 2}" fill="${COLORS.track}"/>`,
+      `<rect x="${fillX.toFixed(1)}" y="${barY}" width="${fill.toFixed(1)}" height="${BAR_HEIGHT}" fill="${color}" clip-path="url(#track-${i})"/>`,
+      side(axis.left, leftShare, leftOn, 'left'),
+      side(axis.right, 1 - leftShare, !leftOn, 'right'),
     ].join('\n  ')
   })
 
-  const rowsBottom = top + result.axes.length * rowHeight
-  const height = rowsBottom + 28
+  // 막대 영역: 첫 기준 문구 윗선 ~ 마지막 이름 줄 아랫선
+  const rowsTop = top - 10
+  const rowsBottom = top + (result.axes.length - 1) * rowHeight + 46
+  const height = rowsBottom + 32
   const centerX = PADDING + LEFT_WIDTH / 2
-  // 막대 영역(첫 막대 ~ 마지막 근거 줄)의 세로 가운데에 맞춘다
-  const centerY = (top + rowsBottom - rowHeight + 28) / 2
+  // 아이콘 묶음은 막대 영역의 세로 가운데에 맞춘다
+  const centerY = (rowsTop + rowsBottom) / 2
   // 판정된 글자 아이콘을 축 순서대로 2x2 로 배치한다 (시간 · 리듬 / 범위 · 협업)
   const gridSize = ICON_SIZE * 2 + ICON_GAP
   const icons = result.axes.map((axis, i) => {
