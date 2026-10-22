@@ -13,22 +13,31 @@ export function escapeXml(value: string): string {
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
 }
 
-const WIDTH = 700
 const PADDING = 24
 // README 이미지는 웹폰트를 불러올 수 없으므로 시스템 폰트로 대체된다
 const FONT = `Pretendard, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif`
 
-// 가로 배치: 왼쪽 1/3 은 캐릭터 이미지, 오른쪽 2/3 은 축별 막대
-const COLUMN_GAP = 24
-const LEFT_WIDTH = Math.round((WIDTH - PADDING * 2) / 3)
-const BAR_X = PADDING + LEFT_WIDTH + COLUMN_GAP
-const BAR_WIDTH = WIDTH - PADDING - BAR_X
 /** 막대 두께와, 막대 양옆 비율 글자가 차지하는 폭(px, "100%" + 여백) */
 const BAR_HEIGHT = 10
 const RATE_WIDTH = 46
-/** 왼쪽 2x2 아이콘 한 칸의 크기와 칸 사이 간격(px) */
-const ICON_SIZE = 84
+/** 아이콘 칸 사이 간격(px) */
 const ICON_GAP = 12
+/** 축 한 줄(기준 · 막대 · 이름)의 높이(px) */
+const ROW_HEIGHT = 72
+
+/**
+ * 카드 배치.
+ * - wide: 가로 배치 (왼쪽 1/3 은 2x2 아이콘, 오른쪽 2/3 은 축별 막대). README 기본값
+ * - compact: 좁은 화면용 세로 배치 (위에 아이콘 4개 한 줄, 아래에 막대). SVG 는 글자 배치를 다시 할 수 없어
+ *   줄이기만 하면 글자가 읽을 수 없게 작아지므로, 모바일에서는 이 배치를 따로 쓴다
+ */
+export type CardLayout = 'wide' | 'compact'
+export const CARD_LAYOUTS: readonly CardLayout[] = ['wide', 'compact']
+
+const LAYOUTS = {
+  wide: { width: 700, iconSize: 84, iconColumns: 2 },
+  compact: { width: 360, iconSize: 64, iconColumns: 4 },
+} satisfies Record<CardLayout, { width: number; iconSize: number; iconColumns: number }>
 
 // 어두운 배경 위에 유리 효과 아이콘을 올리는 테마
 const COLORS = {
@@ -47,8 +56,8 @@ const AXIS_COLORS: Record<MbtiResult['axes'][number]['key'], string> = {
   collab: '#74c0fc',
 }
 
-function frame(height: number, title: string, body: string): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${height}" viewBox="0 0 ${WIDTH} ${height}" role="img" aria-label="${title}">
+function frame(width: number, height: number, title: string, body: string): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${title}">
   <title>${title}</title>
   <style>
     text { font-family: ${FONT}; fill: ${COLORS.text}; }
@@ -74,24 +83,32 @@ function frame(height: number, title: string, body: string): string {
       <stop offset="1" stop-color="#ffffff" stop-opacity="0.7"/>
     </linearGradient>
   </defs>
-  <rect x="0.5" y="0.5" width="${WIDTH - 1}" height="${height - 1}" rx="10" fill="${COLORS.background}" stroke="${COLORS.border}"/>
+  <rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="10" fill="${COLORS.background}" stroke="${COLORS.border}"/>
   ${body}
 </svg>`
 }
 
-export function renderCard(result: MbtiResult): string {
+export function renderCard(result: MbtiResult, layout: CardLayout = 'wide'): string {
   // 카드에 유형 글자를 따로 쓰지 않으므로 화면 낭독기용 제목에 유형을 넣어 둔다
   const title = `${escapeXml(result.login)}의 깃허브 MBTI: ${escapeXml(result.type)}`
-  const top = 36
-  const rowHeight = 72
+  const { width, iconSize, iconColumns } = LAYOUTS[layout]
+  const iconRows = Math.ceil(result.axes.length / iconColumns)
+  const gridWidth = iconSize * iconColumns + ICON_GAP * (iconColumns - 1)
+  const gridHeight = iconSize * iconRows + ICON_GAP * (iconRows - 1)
+
+  // wide 는 아이콘 오른쪽에, compact 는 아이콘 아래에 막대 영역을 둔다
+  const leftWidth = Math.round((width - PADDING * 2) / 3)
+  const barX = layout === 'wide' ? PADDING + leftWidth + PADDING : PADDING
+  const barWidth = width - PADDING - barX
+  const top = layout === 'wide' ? 36 : PADDING + gridHeight + 40
 
   // 한 축은 세 줄: 위 가운데에 판정 기준, 가운데에 비율 · 막대 · 비율, 아래 양 끝에 성향 이름.
   // 비율과 이름은 양 끝에서 세로로 맞추고, 막대는 두 비율 사이에 그린다.
   // 막대 색은 축마다 다르게 하고, 판정된 쪽 비율·이름도 같은 색으로 강조한다.
-  const trackX = BAR_X + RATE_WIDTH
-  const trackWidth = BAR_WIDTH - RATE_WIDTH * 2
+  const trackX = barX + RATE_WIDTH
+  const trackWidth = barWidth - RATE_WIDTH * 2
   const rows = result.axes.map((axis, i) => {
-    const y = top + i * rowHeight
+    const y = top + i * ROW_HEIGHT
     const barY = y + 12
     const color = AXIS_COLORS[axis.key]
     const leftOn = axis.letter === axis.left.letter
@@ -102,7 +119,7 @@ export function renderCard(result: MbtiResult): string {
     const fillX = leftOn ? trackX : trackX + trackWidth - fill
     const percent = (value: number) => (axis.insufficient ? '-' : `${Math.round(value * 100)}%`)
     const side = (s: { letter: string; name: string }, value: number, on: boolean, end: 'left' | 'right') => {
-      const x = end === 'left' ? BAR_X : BAR_X + BAR_WIDTH
+      const x = end === 'left' ? barX : barX + barWidth
       const anchor = end === 'right' ? ' text-anchor="end"' : ''
       const highlight = on ? ` style="fill: ${color}"` : ''
       return [
@@ -113,7 +130,7 @@ export function renderCard(result: MbtiResult): string {
     }
     const criterion = axis.insufficient ? `${axis.criterion} · 데이터 부족` : axis.criterion
     return [
-      `<text x="${BAR_X + BAR_WIDTH / 2}" y="${y}" class="criterion" text-anchor="middle">${escapeXml(criterion)}</text>`,
+      `<text x="${barX + barWidth / 2}" y="${y}" class="criterion" text-anchor="middle">${escapeXml(criterion)}</text>`,
       // 채운 막대는 둥근 트랙 모양으로 잘라, 바깥 끝만 둥글고 채움이 끝나는 쪽은 각지게 한다
       `<clipPath id="track-${i}"><rect x="${trackX}" y="${barY}" width="${trackWidth}" height="${BAR_HEIGHT}" rx="${BAR_HEIGHT / 2}"/></clipPath>`,
       `<rect x="${trackX}" y="${barY}" width="${trackWidth}" height="${BAR_HEIGHT}" rx="${BAR_HEIGHT / 2}" fill="${COLORS.track}"/>`,
@@ -125,35 +142,35 @@ export function renderCard(result: MbtiResult): string {
 
   // 막대 영역: 첫 기준 문구 윗선 ~ 마지막 이름 줄 아랫선
   const rowsTop = top - 10
-  const rowsBottom = top + (result.axes.length - 1) * rowHeight + 46
+  const rowsBottom = top + (result.axes.length - 1) * ROW_HEIGHT + 46
   const height = rowsBottom + 32
-  const centerX = PADDING + LEFT_WIDTH / 2
-  // 아이콘 묶음은 막대 영역의 세로 가운데에 맞춘다
-  const centerY = (rowsTop + rowsBottom) / 2
-  // 판정된 글자 아이콘을 축 순서대로 2x2 로 배치한다 (시간 · 리듬 / 범위 · 협업)
-  const gridSize = ICON_SIZE * 2 + ICON_GAP
+  // wide 는 왼쪽 칸에서 막대 영역의 세로 가운데에, compact 는 카드 위쪽 가운데에 아이콘 묶음을 둔다
+  const gridX = layout === 'wide' ? PADDING + (leftWidth - gridWidth) / 2 : (width - gridWidth) / 2
+  const gridY = layout === 'wide' ? (rowsTop + rowsBottom - gridHeight) / 2 : PADDING
+  // 판정된 글자 아이콘을 축 순서대로 놓는다 (wide 는 2x2: 시간 · 리듬 / 범위 · 협업)
   const icons = result.axes.map((axis, i) => {
-    const x = centerX - gridSize / 2 + (i % 2) * (ICON_SIZE + ICON_GAP)
-    const y = centerY - gridSize / 2 + Math.floor(i / 2) * (ICON_SIZE + ICON_GAP)
-    const r = ICON_SIZE / 2
+    const x = gridX + (i % iconColumns) * (iconSize + ICON_GAP)
+    const y = gridY + Math.floor(i / iconColumns) * (iconSize + ICON_GAP)
+    const r = iconSize / 2
     return [
       `<circle cx="${x + r}" cy="${y + r}" r="${r - 1}" class="glass"/>`,
-      `<svg x="${x}" y="${y}" width="${ICON_SIZE}" height="${ICON_SIZE}" viewBox="0 0 50 50" fill="none">${ICONS[axis.letter] ?? ''}</svg>`,
+      `<svg x="${x}" y="${y}" width="${iconSize}" height="${iconSize}" viewBox="0 0 50 50" fill="none">${ICONS[axis.letter] ?? ''}</svg>`,
     ].join('\n  ')
   })
   const timeZoneNote = result.timeZoneAutoDetected ? `시간대 자동 감지 (${result.timeZone})` : result.timeZone
   const body = [
     ...icons,
     ...rows,
-    `<text x="${WIDTH - PADDING}" y="${height - 12}" class="footer" text-anchor="end">*최근 1년 공개 커밋 기준 · ${escapeXml(timeZoneNote)}</text>`,
+    `<text x="${width - PADDING}" y="${height - 12}" class="footer" text-anchor="end">*최근 1년 공개 커밋 기준 · ${escapeXml(timeZoneNote)}</text>`,
   ].join('\n  ')
 
-  return frame(height, title, body)
+  return frame(width, height, title, body)
 }
 
 export function renderErrorCard(message: string): string {
   const title = '깃허브 MBTI'
   return frame(
+    LAYOUTS.wide.width,
     90,
     title,
     `<text x="${PADDING}" y="36" class="title">${title}</text>

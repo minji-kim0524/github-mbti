@@ -5,6 +5,8 @@ import { client } from './api'
 const AUTO_TIME_ZONE = 'auto'
 const TIME_ZONES = [AUTO_TIME_ZONE, 'Asia/Seoul', 'Asia/Tokyo', 'UTC', 'Europe/London', 'America/New_York', 'America/Los_Angeles']
 const ID_PLACEHOLDER = '{githubID}'
+/** 이 폭 이하 화면에서는 세로 배치(compact) 카드를 보여 준다. 가로 카드(700px)를 줄이면 글자를 읽기 어렵다 */
+const COMPACT_MEDIA = '(max-width: 599px)'
 
 type Result = {
   login: string
@@ -58,9 +60,10 @@ export function App() {
     setTimeout(() => setCopied(false), 1500)
   }
 
-  const cardPath = result
-    ? `/api/card/${encodeURIComponent(result.login)}?${new URLSearchParams({ tz: previewTimeZone })}`
-    : ''
+  const cardPath = (layout?: 'compact') =>
+    result
+      ? `/api/card/${encodeURIComponent(result.login)}?${new URLSearchParams({ tz: previewTimeZone, ...(layout && { layout }) })}`
+      : ''
 
   return (
     <main>
@@ -115,7 +118,12 @@ export function App() {
         </form>
 
         {error && <p className="error">{error}</p>}
-        {result && <img className="card" src={cardPath} alt={`${result.login}의 깃허브 MBTI: ${result.type}`} />}
+        {result && (
+          <picture>
+            <source media={COMPACT_MEDIA} srcSet={cardPath('compact')} />
+            <img className="card" src={cardPath()} alt={`${result.login}의 깃허브 MBTI: ${result.type}`} />
+          </picture>
+        )}
       </section>
     </main>
   )

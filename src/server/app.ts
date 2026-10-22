@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { validator } from 'hono/validator'
 import { analyze, isValidTimeZone } from './analyze.js'
-import { renderCard, renderErrorCard } from './card.js'
+import { CARD_LAYOUTS, renderCard, renderErrorCard } from './card.js'
 import { fetchGitHubActivity, GitHubUserNotFoundError, type GitHubActivity } from './github.js'
 
 // GitHub username 규칙: 영숫자와 하이픈, 최대 39자, 하이픈으로 시작 불가
@@ -78,6 +78,9 @@ const app = new Hono()
     // README에서 `/api/card/minji.svg` 형태로도 쓸 수 있게 확장자 허용
     const user = c.req.param('user').replace(/\.svg$/, '')
     const outcome = await evaluate(user, c.req.query('tz'))
+    // layout=compact 는 좁은 화면용 세로 배치. 모르는 값은 무시하고 기본(wide) 배치로 그린다
+    const layoutQuery = c.req.query('layout')
+    const layout = CARD_LAYOUTS.find((l) => l === layoutQuery) ?? 'wide'
 
     c.header('Content-Type', 'image/svg+xml; charset=utf-8')
     c.header('X-Content-Type-Options', 'nosniff')
@@ -93,7 +96,7 @@ const app = new Hono()
       return c.body(renderErrorCard(UNMEASURABLE_MESSAGE))
     }
     c.header('Cache-Control', CARD_CACHE_CONTROL)
-    return c.body(renderCard(outcome.result))
+    return c.body(renderCard(outcome.result, layout))
   })
 
 export type AppType = typeof app
