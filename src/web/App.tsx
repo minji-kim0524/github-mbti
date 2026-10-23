@@ -107,8 +107,13 @@ export function App() {
   }
 
   const copy = async (key: string, text: string) => {
-    await navigator.clipboard.writeText(text)
-    flash(key)
+    try {
+      await navigator.clipboard.writeText(text)
+      flash(key)
+    } catch {
+      // 클립보드 권한이 막힌 환경(일부 인앱 브라우저 등)
+      setError('복사하지 못했어요. 주소창의 주소를 직접 복사해 주세요.')
+    }
   }
 
   const cardPath = (layout?: 'compact') =>
@@ -136,9 +141,13 @@ export function App() {
     }
   }
 
-  // 휴대폰 등 Web Share API 를 지원하면 시스템 공유 창을 띄운다. 이미지 파일을 받을 수 있는 곳이면 카드 PNG 도 함께 보낸다
-  const canNativeShare = typeof navigator.share === 'function'
-  const nativeShare = async () => {
+  // Web Share API 를 지원하면 시스템 공유 창을 띄운다. 이미지 파일을 받을 수 있는 곳이면 카드 PNG 도 함께 보낸다.
+  // 지원하지 않는 브라우저에서는 결과 링크를 복사해 대신한다
+  const share = async () => {
+    if (typeof navigator.share !== 'function') {
+      await copy('share', shareUrl)
+      return
+    }
     try {
       const file = new File([await svgToPng(visibleCardPath())], fileName, { type: 'image/png' })
       const data = navigator.canShare?.({ files: [file] }) ? { files: [file], text: shareText, url: shareUrl } : { text: shareText, url: shareUrl }
@@ -148,7 +157,6 @@ export function App() {
       if (!(e instanceof DOMException && e.name === 'AbortError')) setError('공유하지 못했어요. 링크 복사를 이용해 주세요.')
     }
   }
-  const xShareUrl = `https://x.com/intent/post?${new URLSearchParams({ text: shareText, url: shareUrl })}`
 
   return (
     <main>
@@ -224,14 +232,9 @@ export function App() {
               <button type="button" className="secondary" onClick={() => copy('link', shareUrl)}>
                 {done === 'link' ? '복사됐어요' : '링크 복사'}
               </button>
-              {canNativeShare && (
-                <button type="button" className="secondary" onClick={nativeShare}>
-                  공유하기
-                </button>
-              )}
-              <a className="button secondary" href={xShareUrl} target="_blank" rel="noreferrer">
-                X에 공유
-              </a>
+              <button type="button" className="secondary" onClick={share}>
+                {done === 'share' ? '링크를 복사했어요' : '결과 공유하기'}
+              </button>
             </div>
           </>
         )}

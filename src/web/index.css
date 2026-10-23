@@ -20,9 +20,8 @@ input { flex: 1 1 200px; padding: 10px 12px; font-size: 15px; border: 1px solid 
 select { padding: 10px; font-size: 14px; border: 1px solid #d0d7de; border-radius: 8px; background: #fff; }
 button { padding: 10px 16px; font-size: 14px; border: 0; border-radius: 8px; background: #6f42c1; color: #fff; cursor: pointer; }
 button:disabled { opacity: 0.5; cursor: default; }
-/* 보조 동작 버튼 (링크도 버튼처럼 보이게 같은 모양을 쓴다) */
-.button { display: inline-block; padding: 10px 16px; font-size: 14px; border-radius: 8px; text-decoration: none; }
-button.secondary, .button.secondary { background: #fff; color: #6f42c1; border: 1px solid #d0bff2; }
+/* 보조 동작 버튼 */
+button.secondary { background: #fff; color: #6f42c1; border: 1px solid #d0bff2; }
 .share { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .card { display: block; max-width: 100%; margin-top: 24px; }
 /* 섹션 제목 오른쪽 끝(스니펫 상자 위)에 복사 버튼을 둔다 */
