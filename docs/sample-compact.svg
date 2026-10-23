@@ -1,30 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="360" height="422" viewBox="0 0 360 422" role="img" aria-label="sample의 깃허브 MBTI: DRMT">
   <title>sample의 깃허브 MBTI: DRMT</title>
   <style>
-    text { font-family: Pretendard, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif; fill: #f2f2f2; }
-    .title { font-size: 14px; font-weight: 600; fill: #a9a9a9; }
+    text { font-family: Pretendard, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif; fill: #24292f; }
+    .title { font-size: 14px; font-weight: 600; fill: #6e7781; }
     .nickname { font-size: 18px; font-weight: 700; }
-    .side { font-size: 12px; fill: #a9a9a9; }
+    .side { font-size: 12px; fill: #6e7781; }
     .side.on { font-weight: 700; }
-    .rate { font-size: 13px; font-weight: 700; fill: #a9a9a9; }
+    .rate { font-size: 13px; font-weight: 700; fill: #6e7781; }
     .criterion { font-size: 12px; font-weight: 600; }
-    .footer { font-size: 10px; fill: #a9a9a9; }
+    .footer { font-size: 10px; fill: #6e7781; }
     .glass { fill: url(#glass-fill); stroke: url(#glass-stroke); stroke-width: 1.5; }
   </style>
   <defs>
-    <!-- 유리 효과: 반투명 흰 면 + 대각선 양 끝이 밝은 테두리 -->
+    <!-- 유리 효과: 반투명 면 + 대각선 양 끝이 진한 테두리 -->
     <linearGradient id="glass-fill" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#eef1f5" stop-opacity="0.9"/>
     </linearGradient>
     <linearGradient id="glass-stroke" x1="0.9" y1="0" x2="0.1" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.7"/>
-      <stop offset="0.4" stop-color="#ffffff" stop-opacity="0.08"/>
-      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0.08"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0.7"/>
+      <stop offset="0" stop-color="#8c959f" stop-opacity="0.3"/>
+      <stop offset="0.4" stop-color="#8c959f" stop-opacity="0.08"/>
+      <stop offset="0.6" stop-color="#8c959f" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#8c959f" stop-opacity="0.3"/>
     </linearGradient>
   </defs>
-  <rect x="0.5" y="0.5" width="359" height="421" rx="10" fill="#353535" stroke="#4a4a4a"/>
+  <rect x="0.5" y="0.5" width="359" height="421" rx="10" fill="#f8f9fa" stroke="#d8dde3" stroke-width="1"/>
   <circle cx="66" cy="56" r="31" class="glass"/>
   <svg x="34" y="24" width="64" height="64" viewBox="0 0 50 50" fill="none"><g filter="url(#D-filter1_f_2032_79)">
 <path d="M25 33.7083C29.8095 33.7083 33.7083 29.8095 33.7083 25C33.7083 20.1905 29.8095 16.2917 25 16.2917C20.1905 16.2917 16.2917 20.1905 16.2917 25C16.2917 29.8095 20.1905 33.7083 25 33.7083Z" stroke-width="2" stroke="#231815"/>
@@ -191,35 +191,35 @@
 </defs></svg>
   <text x="180" y="128" class="criterion" text-anchor="middle">커밋시간대</text>
   <clipPath id="track-0"><rect x="70" y="140" width="220" height="10" rx="5"/></clipPath>
-  <rect x="70" y="140" width="220" height="10" rx="5" fill="#4a4a4a"/>
-  <rect x="103.0" y="140" width="187.0" height="10" fill="#b197fc" clip-path="url(#track-0)"/>
+  <rect x="70" y="140" width="220" height="10" rx="5" fill="#e9ecef"/>
+  <rect x="103.0" y="140" width="187.0" height="10" fill="#6741d9" clip-path="url(#track-0)"/>
   <text x="24" y="150" class="rate">15%</text>
   <text x="24" y="170" class="side">새벽커밋형(N)</text>
-  <text x="336" y="150" text-anchor="end" class="rate" style="fill: #b197fc">85%</text>
-  <text x="336" y="170" text-anchor="end" class="side on" style="fill: #b197fc">오전배포형(D)</text>
+  <text x="336" y="150" text-anchor="end" class="rate" style="fill: #6741d9">85%</text>
+  <text x="336" y="170" text-anchor="end" class="side on" style="fill: #6741d9">오전배포형(D)</text>
   <text x="180" y="200" class="criterion" text-anchor="middle">기여빈도</text>
   <clipPath id="track-1"><rect x="70" y="212" width="220" height="10" rx="5"/></clipPath>
-  <rect x="70" y="212" width="220" height="10" rx="5" fill="#4a4a4a"/>
-  <rect x="106.2" y="212" width="183.8" height="10" fill="#63e6be" clip-path="url(#track-1)"/>
+  <rect x="70" y="212" width="220" height="10" rx="5" fill="#e9ecef"/>
+  <rect x="106.2" y="212" width="183.8" height="10" fill="#087f5b" clip-path="url(#track-1)"/>
   <text x="24" y="222" class="rate">16%</text>
   <text x="24" y="242" class="side">성실한 농부형(S)</text>
-  <text x="336" y="222" text-anchor="end" class="rate" style="fill: #63e6be">84%</text>
-  <text x="336" y="242" text-anchor="end" class="side on" style="fill: #63e6be">몰아치는 파도형(R)</text>
+  <text x="336" y="222" text-anchor="end" class="rate" style="fill: #087f5b">84%</text>
+  <text x="336" y="242" text-anchor="end" class="side on" style="fill: #087f5b">몰아치는 파도형(R)</text>
   <text x="180" y="272" class="criterion" text-anchor="middle">언어집중도</text>
   <clipPath id="track-2"><rect x="70" y="284" width="220" height="10" rx="5"/></clipPath>
-  <rect x="70" y="284" width="220" height="10" rx="5" fill="#4a4a4a"/>
-  <rect x="158.0" y="284" width="132.0" height="10" fill="#ffd43b" clip-path="url(#track-2)"/>
+  <rect x="70" y="284" width="220" height="10" rx="5" fill="#e9ecef"/>
+  <rect x="158.0" y="284" width="132.0" height="10" fill="#c2410c" clip-path="url(#track-2)"/>
   <text x="24" y="294" class="rate">40%</text>
   <text x="24" y="314" class="side">원툴장인형(F)</text>
-  <text x="336" y="294" text-anchor="end" class="rate" style="fill: #ffd43b">60%</text>
-  <text x="336" y="314" text-anchor="end" class="side on" style="fill: #ffd43b">멀티언어형(M)</text>
+  <text x="336" y="294" text-anchor="end" class="rate" style="fill: #c2410c">60%</text>
+  <text x="336" y="314" text-anchor="end" class="side on" style="fill: #c2410c">멀티언어형(M)</text>
   <text x="180" y="344" class="criterion" text-anchor="middle">협업비중</text>
   <clipPath id="track-3"><rect x="70" y="356" width="220" height="10" rx="5"/></clipPath>
-  <rect x="70" y="356" width="220" height="10" rx="5" fill="#4a4a4a"/>
-  <rect x="169.0" y="356" width="121.0" height="10" fill="#74c0fc" clip-path="url(#track-3)"/>
+  <rect x="70" y="356" width="220" height="10" rx="5" fill="#e9ecef"/>
+  <rect x="169.0" y="356" width="121.0" height="10" fill="#1971c2" clip-path="url(#track-3)"/>
   <text x="24" y="366" class="rate">45%</text>
   <text x="24" y="386" class="side">솔로 플레이어형(A)</text>
-  <text x="336" y="366" text-anchor="end" class="rate" style="fill: #74c0fc">55%</text>
-  <text x="336" y="386" text-anchor="end" class="side on" style="fill: #74c0fc">팀 플레이어형(T)</text>
+  <text x="336" y="366" text-anchor="end" class="rate" style="fill: #1971c2">55%</text>
+  <text x="336" y="386" text-anchor="end" class="side on" style="fill: #1971c2">팀 플레이어형(T)</text>
   <text x="336" y="410" class="footer" text-anchor="end">*최근 1년 공개 커밋 기준 · 시간대 자동 감지 (UTC+9)</text>
 </svg>

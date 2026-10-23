@@ -5,7 +5,10 @@
 GitHub 공개 활동을 분석해 4글자 개발자 유형을 카드로 보여 줍니다. 프로필 README에 이미지로 붙여 넣을 수 있어요.
 
 <p align="center">
-  <img src="docs/sample-wide.svg" alt="깃허브 MBTI 카드 예시 (NSFA)" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/sample-wide-dark.svg" />
+    <img src="docs/sample-wide.svg" alt="깃허브 MBTI 카드 예시 (NSFA)" />
+  </picture>
 </p>
 
 <p align="center">
@@ -24,29 +27,39 @@ GitHub 공개 활동을 분석해 4글자 개발자 유형을 카드로 보여 �
 
 ### 프로필 README에 붙이기
 
-1. 아래 코드를 복사합니다.
+1. 아래 코드를 복사합니다. GitHub를 다크 테마로 보는 사람에게는 다크 카드, 라이트 테마로 보는 사람에게는 라이트 카드가 보여요.
 
    ```html
-   <a href="https://github-mbti-whoami.vercel.app"
-     ><img
-       src="https://github-mbti-whoami.vercel.app/api/card/{githubID}?tz=auto"
-       alt="깃허브 MBTI"
-   /></a>
+   <a href="https://github-mbti-whoami.vercel.app">
+     <picture>
+       <source
+         media="(prefers-color-scheme: dark)"
+         srcset="https://github-mbti-whoami.vercel.app/api/card/{githubID}?tz=auto&theme=dark"
+       />
+       <img
+         src="https://github-mbti-whoami.vercel.app/api/card/{githubID}?tz=auto"
+         alt="깃허브 MBTI"
+       />
+     </picture>
+   </a>
    ```
 
-2. `{githubID}`를 내 GitHub 아이디로 바꿉니다.
-3. 필요하면 `tz` 값을 바꿉니다 (아래 표 참고).
+2. `{githubID}` 두 곳을 모두 내 GitHub 아이디로 바꿉니다.
+3. 필요하면 `tz`·`layout` 값을 바꿉니다 (아래 표 참고). 두 주소에 같은 값을 넣어 주세요.
 4. 내 프로필 README(`<아이디>/<아이디>` 저장소의 `README.md`)에 붙여 넣으면 카드가 표시됩니다.
 
 | 파라미터 | 값                                  | 동작                                                                                                                                     |
 | -------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `tz`     | `auto` (기본)                       | 커밋 시각에 기록된 시간대(오프셋)로 자동 감지해요. 생략해도 같아요.                                                                      |
 | `tz`     | `Asia/Seoul`, `America/New_York` 등 | 모든 커밋을 그 시간대로 바꿔서 판정해요. [IANA 시간대 이름](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)을 넣어 주세요. |
-| `layout` | 생략 (기본)                         | 아이콘이 왼쪽, 막대가 오른쪽인 가로 카드(700px)                                                                                          |
+| `layout` | 생략 (기본)                         | 아이콘이 왼쪽, 막대가 오른쪽인 가로 카드(600px)                                                                                          |
 | `layout` | `compact`                           | 아이콘이 위, 막대가 아래인 세로 카드(360px). 좁은 공간에 넣을 때 써 보세요.                                                              |
+| `theme`  | 생략 (기본)                         | 연한 배경의 라이트 카드                                                                                                                  |
+| `theme`  | `dark`                              | GitHub 다크 화면에 맞춘 어두운 카드. 막대는 같은 색 계열의 밝은 톤으로 바뀌어 어두운 배경에서도 잘 읽혀요.                              |
 
 - 서버·CI·컨테이너에서 커밋하면 시간대가 `UTC`로 잡힐 수 있어요. 카드 하단에 감지된 시간대가 표시되니, 실제와 다르면 `tz`를 직접 지정하세요.
 - 카드는 1시간 동안 캐싱되므로 새 커밋이 바로 반영되지는 않아요.
+- 한 가지 테마만 쓰고 싶다면 `<picture>`·`<source>` 없이 `<img>` 하나만 남기고, 필요하면 `&theme=dark`를 붙이세요.
 
 ## How it works
 
@@ -83,8 +96,18 @@ GitHub 아이디 → GraphQL 조회 2번 → 4축 판정 → SVG 카드 렌더 �
     <th>세로 카드 (<code>layout=compact</code>)</th>
   </tr>
   <tr>
-    <td><img src="docs/sample-wide.svg" alt="NSFA 카드 예시" /></td>
-    <td><img src="docs/sample-compact.svg" alt="DRMT 카드 예시" /></td>
+    <td>
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/sample-wide-dark.svg" />
+        <img src="docs/sample-wide.svg" alt="NSFA 카드 예시" />
+      </picture>
+    </td>
+    <td>
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/sample-compact-dark.svg" />
+        <img src="docs/sample-compact.svg" alt="DRMT 카드 예시" />
+      </picture>
+    </td>
   </tr>
   <tr>
     <td><b>NSFA</b> · 새벽의 꾸준한 한 우물 솔로 장인</td>
@@ -92,7 +115,7 @@ GitHub 아이디 → GraphQL 조회 2번 → 4축 판정 → SVG 카드 렌더 �
   </tr>
 </table>
 
-> 예시 카드는 샘플 데이터로 그린 것이에요.
+> 예시 카드는 샘플 데이터로 그린 것이에요. GitHub 테마(라이트/다크)에 따라 다른 색의 카드가 보여요.
 
 유형은 4축 × 2가지 = **16가지**예요. 별명은 글자마다 붙는 수식어를 이어 붙여 만들어요 (예: N + S + F + A → "새벽의 꾸준한 한 우물 솔로 장인").
 
@@ -154,10 +177,10 @@ public/             유형 글자 아이콘
 
 ### API
 
-| 엔드포인트                          | 응답                                               |
-| ----------------------------------- | -------------------------------------------------- |
-| `GET /api/card/:user?tz=&layout=`   | MBTI 카드 SVG (오류여도 200 + 오류 카드)           |
-| `GET /api/mbti/:user?tz=`           | 판정 결과 JSON (유형, 별명, 축별 비율과 근거)      |
+| 엔드포인트                               | 응답                                          |
+| ---------------------------------------- | --------------------------------------------- |
+| `GET /api/card/:user?tz=&layout=&theme=` | MBTI 카드 SVG (오류여도 200 + 오류 카드)      |
+| `GET /api/mbti/:user?tz=`                | 판정 결과 JSON (유형, 별명, 축별 비율과 근거) |
 
 ## Star & contribute
 
