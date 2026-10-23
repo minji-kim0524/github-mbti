@@ -1,43 +1,169 @@
 /* Pretendard 가변 폰트 (한글은 동적 서브셋으로 필요한 글자만 로드) */
-@import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
+@import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 
 :root {
-  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  font-family:
+    "Pretendard Variable",
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    sans-serif;
   color: #24292f;
-  background: #f7f6fb;
+  background: #f6f6f7;
 }
-body { margin: 0; }
+body {
+  margin: 0;
+}
 /* 입력란·버튼은 기본적으로 폰트를 상속하지 않으므로 명시 */
-input, button, textarea, select { font-family: inherit; }
+input,
+button,
+textarea,
+select {
+  font-family: inherit;
+}
 /* 가로 카드(600px)가 줄어들지 않고 원래 크기로 보이도록 본문 폭을 넉넉히 둔다 */
-main { max-width: 700px; margin: 0 auto; padding: 40px 16px; }
-h1 { color: #6f42c1; margin-bottom: 8px; }
-h2 { font-size: 16px; margin-top: 28px; }
-.desc { color: #57606a; margin-top: 0; line-height: 1.6; }
-.desc small { color: #8c959f; }
-form { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 24px; }
-input { flex: 1 1 200px; padding: 10px 12px; font-size: 15px; border: 1px solid #d0d7de; border-radius: 8px; }
-select { padding: 10px; font-size: 14px; border: 1px solid #d0d7de; border-radius: 8px; background: #fff; }
-button { padding: 10px 16px; font-size: 14px; border: 0; border-radius: 8px; background: #6f42c1; color: #fff; cursor: pointer; }
-button:disabled { opacity: 0.5; cursor: default; }
+main {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 40px 16px;
+}
+h1 {
+  color: #333c4c;
+  margin-bottom: 8px;
+}
+h2 {
+  font-size: 16px;
+  margin-top: 28px;
+}
+.desc {
+  color: #57606a;
+  margin-top: 0;
+  line-height: 1.6;
+}
+.desc small {
+  color: #8c959f;
+}
+form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+input {
+  flex: 1 1 200px;
+  padding: 10px 12px;
+  font-size: 15px;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+}
+select {
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  background: #fff;
+}
+button {
+  padding: 10px 16px;
+  font-size: 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #1b4965;
+  color: #fff;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 /* 보조 동작 버튼 */
-button.secondary { background: #fff; color: #6f42c1; border: 1px solid #d0bff2; }
-.share { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.card { display: block; max-width: 100%; margin-top: 24px; }
+button.secondary {
+  background: #fff;
+  color: #1b4965;
+  border: 1px solid #d0bff2;
+}
+.share {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.card {
+  display: block;
+  max-width: 100%;
+  margin-top: 24px;
+}
 /* 섹션 제목 오른쪽 끝(스니펫 상자 위)에 복사 버튼을 둔다 */
-.section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 28px; margin-bottom: 12px; }
-.section-head h2 { margin: 0; }
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 28px;
+  margin-bottom: 12px;
+}
+.section-head h2 {
+  margin: 0;
+}
 /* 미리보기 버튼은 폼 안에서 입력란 높이(41px)로 늘어나므로 같은 높이로 맞춘다 */
-.section-head button { flex: none; min-height: 41px; }
+.section-head button {
+  flex: none;
+  min-height: 41px;
+}
 /* 스니펫은 잘리지 않도록 상자 폭에 맞춰 줄을 바꾼다 */
-pre { margin: 0; background: #fff; border: 1px solid #d0d7de; padding: 12px; border-radius: 8px; white-space: pre-wrap; word-break: break-all; font-size: 12px; }
+pre {
+  margin: 0;
+  background: #fff;
+  border: 1px solid #d0d7de;
+  padding: 12px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 12px;
+}
 /* 분석 실패 모달. 여백은 안쪽 상자(.alert-body)에 두어, dialog 자체를 누른 경우(=배경 클릭)만 닫히게 한다 */
-.alert { width: min(360px, calc(100% - 32px)); padding: 0; border: 0; border-radius: 12px; box-shadow: 0 12px 32px rgba(31, 35, 40, 0.2); text-align: center; }
-.alert-body { padding: 24px; }
-.alert::backdrop { background: rgba(31, 35, 40, 0.45); }
-.alert h2 { margin: 0 0 8px; font-size: 17px; }
-.alert p { margin: 0 0 20px; color: #57606a; font-size: 14px; line-height: 1.6; }
-.alert button { width: 100%; }
-.guide { color: #57606a; font-size: 13px; line-height: 1.7; padding-left: 18px; }
-.guide a { color: #6f42c1; }
-code { background: #eeeaf7; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.alert {
+  width: min(360px, calc(100% - 32px));
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(31, 35, 40, 0.2);
+  text-align: center;
+}
+.alert-body {
+  padding: 24px;
+}
+.alert::backdrop {
+  background: rgba(31, 35, 40, 0.45);
+}
+.alert h2 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+.alert p {
+  margin: 0 0 20px;
+  color: #57606a;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.alert button {
+  width: 100%;
+}
+.guide {
+  color: #57606a;
+  font-size: 13px;
+  line-height: 1.7;
+  padding-left: 18px;
+}
+.guide a {
+  color: #1b4965;
+}
+code {
+  background: #ebf2fa;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
