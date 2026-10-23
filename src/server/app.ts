@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { validator } from 'hono/validator'
 import { analyze, isValidTimeZone } from './analyze.js'
-import { CARD_LAYOUTS, renderCard, renderErrorCard } from './card.js'
+import { CARD_LAYOUTS, CARD_THEMES, renderCard, renderErrorCard } from './card.js'
 import { fetchGitHubActivity, GitHubUserNotFoundError, type GitHubActivity } from './github.js'
 
 // GitHub username 규칙: 영숫자와 하이픈, 최대 39자, 하이픈으로 시작 불가
@@ -81,6 +81,9 @@ const app = new Hono()
     // layout=compact 는 좁은 화면용 세로 배치. 모르는 값은 무시하고 기본(wide) 배치로 그린다
     const layoutQuery = c.req.query('layout')
     const layout = CARD_LAYOUTS.find((l) => l === layoutQuery) ?? 'wide'
+    // theme=dark 는 어두운 화면용 색. 모르는 값은 무시하고 기본(light) 색으로 그린다
+    const themeQuery = c.req.query('theme')
+    const theme = CARD_THEMES.find((t) => t === themeQuery) ?? 'light'
 
     c.header('Content-Type', 'image/svg+xml; charset=utf-8')
     c.header('X-Content-Type-Options', 'nosniff')
@@ -89,14 +92,14 @@ const app = new Hono()
     // README(camo)는 200 이 아니면 이미지를 깨진 상태로 보여 주므로, 오류도 200 + 오류 카드로 응답한다
     if (!outcome.ok) {
       c.header('Cache-Control', ERROR_CACHE_CONTROL)
-      return c.body(renderErrorCard(outcome.message))
+      return c.body(renderErrorCard(outcome.message, theme))
     }
     if (!outcome.result.measurable) {
       c.header('Cache-Control', ERROR_CACHE_CONTROL)
-      return c.body(renderErrorCard(UNMEASURABLE_MESSAGE))
+      return c.body(renderErrorCard(UNMEASURABLE_MESSAGE, theme))
     }
     c.header('Cache-Control', CARD_CACHE_CONTROL)
-    return c.body(renderCard(outcome.result, layout))
+    return c.body(renderCard(outcome.result, layout, theme))
   })
 
 export type AppType = typeof app

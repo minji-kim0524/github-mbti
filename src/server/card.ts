@@ -35,60 +35,90 @@ export type CardLayout = 'wide' | 'compact'
 export const CARD_LAYOUTS: readonly CardLayout[] = ['wide', 'compact']
 
 const LAYOUTS = {
-  wide: { width: 700, iconSize: 84, iconColumns: 2 },
+  wide: { width: 600, iconSize: 84, iconColumns: 2 },
   compact: { width: 360, iconSize: 64, iconColumns: 4 },
 } satisfies Record<CardLayout, { width: number; iconSize: number; iconColumns: number }>
 
-// 어두운 배경 위에 유리 효과 아이콘을 올리는 테마
-const COLORS = {
-  background: '#353535',
-  border: '#4a4a4a',
-  text: '#f2f2f2',
-  muted: '#a9a9a9',
-  track: '#4a4a4a',
+/**
+ * 카드 색 테마. README 는 <img> 라 GitHub 테마를 따라가지 못하므로, 라이트/다크 카드를 따로 만들어
+ * <picture> 의 prefers-color-scheme 으로 골라 쓰게 한다. 생략하면 light
+ */
+export type CardTheme = 'light' | 'dark'
+export const CARD_THEMES: readonly CardTheme[] = ['light', 'dark']
+
+type Palette = {
+  background: string
+  border: string
+  text: string
+  muted: string
+  track: string
+  /** 축별 막대 색. 판정 글자도 이 색으로 쓰므로 배경 대비 4.5:1 이상으로 고르고, 색상(hue)은 보라·초록·주황·파랑으로 고르게 벌린다 */
+  axis: Record<MbtiResult['axes'][number]['key'], string>
+  /** 아이콘 뒤 유리 원: 면 그라데이션 [시작, 끝] 과 테두리 색·양 끝/가운데 불투명도 */
+  glassFill: [string, number, string, number]
+  glassStroke: [string, number, number]
 }
 
-// 축별 막대 색. 어두운 배경에서 잘 보이도록 밝은 톤을 쓰고, 서로 색상(hue)이 겹치지 않게 고른다
-const AXIS_COLORS: Record<MbtiResult['axes'][number]['key'], string> = {
-  time: '#b197fc',
-  rhythm: '#63e6be',
-  scope: '#ffd43b',
-  collab: '#74c0fc',
+const THEMES: Record<CardTheme, Palette> = {
+  light: {
+    background: '#f8f9fa',
+    border: '#d8dde3',
+    text: '#24292f',
+    muted: '#6e7781',
+    track: '#e9ecef',
+    axis: { time: '#6741d9', rhythm: '#087f5b', scope: '#c2410c', collab: '#1971c2' },
+    glassFill: ['#ffffff', 0.95, '#eef1f5', 0.9],
+    glassStroke: ['#8c959f', 0.3, 0.08],
+  },
+  // GitHub 다크 화면(#0d1117) 위에서 어울리도록 한 단계 밝은 면을 쓰고, 막대는 같은 색상의 밝은 톤으로 바꾼다
+  dark: {
+    background: '#161b22',
+    border: '#30363d',
+    text: '#e6edf3',
+    muted: '#8b949e',
+    track: '#30363d',
+    axis: { time: '#b197fc', rhythm: '#63e6be', scope: '#ffa94d', collab: '#74c0fc' },
+    glassFill: ['#ffffff', 0.16, '#ffffff', 0.05],
+    glassStroke: ['#ffffff', 0.5, 0.08],
+  },
 }
 
-function frame(width: number, height: number, title: string, body: string): string {
+function frame(width: number, height: number, title: string, body: string, colors: Palette): string {
+  const [fillFrom, fillFromOpacity, fillTo, fillToOpacity] = colors.glassFill
+  const [strokeColor, strokeEdge, strokeMiddle] = colors.glassStroke
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${title}">
   <title>${title}</title>
   <style>
-    text { font-family: ${FONT}; fill: ${COLORS.text}; }
-    .title { font-size: 14px; font-weight: 600; fill: ${COLORS.muted}; }
+    text { font-family: ${FONT}; fill: ${colors.text}; }
+    .title { font-size: 14px; font-weight: 600; fill: ${colors.muted}; }
     .nickname { font-size: 18px; font-weight: 700; }
-    .side { font-size: 12px; fill: ${COLORS.muted}; }
+    .side { font-size: 12px; fill: ${colors.muted}; }
     .side.on { font-weight: 700; }
-    .rate { font-size: 13px; font-weight: 700; fill: ${COLORS.muted}; }
+    .rate { font-size: 13px; font-weight: 700; fill: ${colors.muted}; }
     .criterion { font-size: 12px; font-weight: 600; }
-    .footer { font-size: 10px; fill: ${COLORS.muted}; }
+    .footer { font-size: 10px; fill: ${colors.muted}; }
     .glass { fill: url(#glass-fill); stroke: url(#glass-stroke); stroke-width: 1.5; }
   </style>
   <defs>
-    <!-- 유리 효과: 반투명 흰 면 + 대각선 양 끝이 밝은 테두리 -->
+    <!-- 유리 효과: 반투명 면 + 대각선 양 끝이 진한 테두리 -->
     <linearGradient id="glass-fill" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="0" stop-color="${fillFrom}" stop-opacity="${fillFromOpacity}"/>
+      <stop offset="1" stop-color="${fillTo}" stop-opacity="${fillToOpacity}"/>
     </linearGradient>
     <linearGradient id="glass-stroke" x1="0.9" y1="0" x2="0.1" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.7"/>
-      <stop offset="0.4" stop-color="#ffffff" stop-opacity="0.08"/>
-      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0.08"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0.7"/>
+      <stop offset="0" stop-color="${strokeColor}" stop-opacity="${strokeEdge}"/>
+      <stop offset="0.4" stop-color="${strokeColor}" stop-opacity="${strokeMiddle}"/>
+      <stop offset="0.6" stop-color="${strokeColor}" stop-opacity="${strokeMiddle}"/>
+      <stop offset="1" stop-color="${strokeColor}" stop-opacity="${strokeEdge}"/>
     </linearGradient>
   </defs>
-  <rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="10" fill="${COLORS.background}" stroke="${COLORS.border}"/>
+  <rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="10" fill="${colors.background}" stroke="${colors.border}" stroke-width="1"/>
   ${body}
 </svg>`
 }
 
-export function renderCard(result: MbtiResult, layout: CardLayout = 'wide'): string {
+export function renderCard(result: MbtiResult, layout: CardLayout = 'wide', theme: CardTheme = 'light'): string {
+  const colors = THEMES[theme]
   // 카드에 유형 글자를 따로 쓰지 않으므로 화면 낭독기용 제목에 유형을 넣어 둔다
   const title = `${escapeXml(result.login)}의 깃허브 MBTI: ${escapeXml(result.type)}`
   const { width, iconSize, iconColumns } = LAYOUTS[layout]
@@ -110,7 +140,7 @@ export function renderCard(result: MbtiResult, layout: CardLayout = 'wide'): str
   const rows = result.axes.map((axis, i) => {
     const y = top + i * ROW_HEIGHT
     const barY = y + 12
-    const color = AXIS_COLORS[axis.key]
+    const color = colors.axis[axis.key]
     const leftOn = axis.letter === axis.left.letter
     const leftShare = Math.max(0, Math.min(1, axis.score))
     // 막대는 판정된 쪽 끝부터 그쪽 비율만큼 채운다
@@ -133,7 +163,7 @@ export function renderCard(result: MbtiResult, layout: CardLayout = 'wide'): str
       `<text x="${barX + barWidth / 2}" y="${y}" class="criterion" text-anchor="middle">${escapeXml(criterion)}</text>`,
       // 채운 막대는 둥근 트랙 모양으로 잘라, 바깥 끝만 둥글고 채움이 끝나는 쪽은 각지게 한다
       `<clipPath id="track-${i}"><rect x="${trackX}" y="${barY}" width="${trackWidth}" height="${BAR_HEIGHT}" rx="${BAR_HEIGHT / 2}"/></clipPath>`,
-      `<rect x="${trackX}" y="${barY}" width="${trackWidth}" height="${BAR_HEIGHT}" rx="${BAR_HEIGHT / 2}" fill="${COLORS.track}"/>`,
+      `<rect x="${trackX}" y="${barY}" width="${trackWidth}" height="${BAR_HEIGHT}" rx="${BAR_HEIGHT / 2}" fill="${colors.track}"/>`,
       `<rect x="${fillX.toFixed(1)}" y="${barY}" width="${fill.toFixed(1)}" height="${BAR_HEIGHT}" fill="${color}" clip-path="url(#track-${i})"/>`,
       side(axis.left, leftShare, leftOn, 'left'),
       side(axis.right, 1 - leftShare, !leftOn, 'right'),
@@ -164,10 +194,10 @@ export function renderCard(result: MbtiResult, layout: CardLayout = 'wide'): str
     `<text x="${width - PADDING}" y="${height - 12}" class="footer" text-anchor="end">*최근 1년 공개 커밋 기준 · ${escapeXml(timeZoneNote)}</text>`,
   ].join('\n  ')
 
-  return frame(width, height, title, body)
+  return frame(width, height, title, body, colors)
 }
 
-export function renderErrorCard(message: string): string {
+export function renderErrorCard(message: string, theme: CardTheme = 'light'): string {
   const title = '깃허브 MBTI'
   return frame(
     LAYOUTS.wide.width,
@@ -175,5 +205,6 @@ export function renderErrorCard(message: string): string {
     title,
     `<text x="${PADDING}" y="36" class="title">${title}</text>
   <text x="${PADDING}" y="62" class="nickname">${escapeXml(message)}</text>`,
+    THEMES[theme],
   )
 }
