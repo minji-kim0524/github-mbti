@@ -17,8 +17,9 @@ const PADDING = 24
 // README 이미지는 웹폰트를 불러올 수 없으므로 시스템 폰트로 대체된다
 const FONT = `Pretendard, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif`
 
-/** 막대 두께와, 막대 양옆 비율 글자가 차지하는 폭(px, "100%" + 여백) */
-const BAR_HEIGHT = 10
+/** 막대 두께(= 잔디 칸 한 변)와 칸 사이 간격, 막대 양옆 비율 글자가 차지하는 폭(px, "100%" + 여백) */
+const BAR_HEIGHT = 11
+const CELL_GAP = 3
 const RATE_WIDTH = 46
 /** 아이콘 칸 사이 간격(px) */
 const ICON_GAP = 12
@@ -68,7 +69,7 @@ const THEMES: Record<CardTheme, Palette> = {
     border: '#d8dde3',
     text: '#24292f',
     muted: '#6e7781',
-    track: '#e9ecef',
+    track: '#d0d7de',
     axis: { time: '#6741d9', rhythm: '#087f5b', scope: '#c2410c', collab: '#1971c2' },
     glassFill: ['#ffffff', 0.95, '#eef1f5', 0.9],
     glassStroke: ['#8c959f', 0.3, 0.08],
@@ -79,7 +80,7 @@ const THEMES: Record<CardTheme, Palette> = {
     border: '#30363d',
     text: '#e6edf3',
     muted: '#8b949e',
-    track: '#30363d',
+    track: '#424a53',
     axis: { time: '#b197fc', rhythm: '#63e6be', scope: '#ffa94d', collab: '#74c0fc' },
     glassFill: ['#ffffff', 0.16, '#ffffff', 0.05],
     glassStroke: ['#ffffff', 0.5, 0.08],
@@ -146,16 +147,18 @@ export function renderCard(result: MbtiResult, layout: CardLayout = 'wide', them
   // 막대 색은 축마다 다르게 하고, 판정된 쪽 비율·이름도 같은 색으로 강조한다.
   const trackX = barX + RATE_WIDTH
   const trackWidth = barWidth - RATE_WIDTH * 2
+  // 막대는 GitHub 잔디처럼 작은 정사각형 칸을 이어 그린다. 칸 수는 트랙 폭에 맞추고 남는 폭은 양옆에 나눠 가운데 정렬한다
+  const cellCount = Math.floor((trackWidth + CELL_GAP) / (BAR_HEIGHT + CELL_GAP))
+  const cellsX = trackX + (trackWidth - (cellCount * (BAR_HEIGHT + CELL_GAP) - CELL_GAP)) / 2
   const rows = result.axes.map((axis, i) => {
     const y = top + i * ROW_HEIGHT
     const barY = y + 12
     const color = colors.axis[axis.key]
     const leftOn = axis.letter === axis.left.letter
     const leftShare = Math.max(0, Math.min(1, axis.score))
-    // 막대는 판정된 쪽 끝부터 그쪽 비율만큼 채운다
+    // 막대는 판정된 쪽 끝부터 그쪽 비율만큼 칸을 채운다
     const share = leftOn ? leftShare : 1 - leftShare
-    const fill = share * trackWidth
-    const fillX = leftOn ? trackX : trackX + trackWidth - fill
+    const filled = Math.round(share * cellCount)
     const percent = (value: number) => (axis.insufficient ? '-' : `${Math.round(value * 100)}%`)
     const side = (s: { letter: string; name: string }, value: number, on: boolean, end: 'left' | 'right') => {
       const x = end === 'left' ? barX : barX + barWidth
@@ -170,10 +173,11 @@ export function renderCard(result: MbtiResult, layout: CardLayout = 'wide', them
     const criterion = axis.insufficient ? `${axis.criterion} · 데이터 부족` : axis.criterion
     return [
       `<text x="${barX + barWidth / 2}" y="${y}" class="criterion" text-anchor="middle">${escapeXml(criterion)}</text>`,
-      // 채운 막대는 둥근 트랙 모양으로 잘라, 바깥 끝만 둥글고 채움이 끝나는 쪽은 각지게 한다
-      `<clipPath id="track-${i}"><rect x="${trackX}" y="${barY}" width="${trackWidth}" height="${BAR_HEIGHT}" rx="${BAR_HEIGHT / 2}"/></clipPath>`,
-      `<rect x="${trackX}" y="${barY}" width="${trackWidth}" height="${BAR_HEIGHT}" rx="${BAR_HEIGHT / 2}" fill="${colors.track}"/>`,
-      `<rect x="${fillX.toFixed(1)}" y="${barY}" width="${fill.toFixed(1)}" height="${BAR_HEIGHT}" fill="${color}" clip-path="url(#track-${i})"/>`,
+      ...Array.from({ length: cellCount }, (_, c) => {
+        const on = leftOn ? c < filled : c >= cellCount - filled
+        const x = cellsX + c * (BAR_HEIGHT + CELL_GAP)
+        return `<rect x="${x.toFixed(1)}" y="${barY}" width="${BAR_HEIGHT}" height="${BAR_HEIGHT}" rx="2" fill="${on ? color : colors.track}"/>`
+      }),
       side(axis.left, leftShare, leftOn, 'left'),
       side(axis.right, 1 - leftShare, !leftOn, 'right'),
     ].join('\n  ')
