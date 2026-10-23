@@ -154,7 +154,12 @@ export function App() {
     <main>
       <h1>내 깃허브의 MBTI는 무엇일까?</h1>
       <p className="desc">
-        <small>*커밋 내역을 기반으로 측정됩니다.</small>
+        <small>
+          *커밋 내역을 기반으로 측정됩니다.
+          <br />
+          재미로 보는 비공식 개발자 성향 테스트예요. 활동 기록만으로 실제 성격을 정확히 알 수는 없고, 공식 MBTI® 검사와도
+          관련이 없어요.
+        </small>
       </p>
 
       <section>
@@ -230,6 +235,28 @@ export function App() {
             </div>
           </>
         )}
+      </section>
+
+      <section>
+        <h2>데이터 수집과 개인정보</h2>
+        <ul className="guide">
+          <li>
+            로그인 없이 GitHub <b>공개 활동만</b> 읽어요. 최근 1년의 잔디, 커밋한 저장소의 주 언어, 상위 저장소의 커밋 시각,
+            PR·리뷰 수가 전부예요.
+          </li>
+          <li>커밋 메시지, 코드, 이메일 주소, 비공개 저장소의 내용은 읽지 않아요.</li>
+          <li>
+            데이터베이스가 없어요. 조회한 데이터는 서버 메모리에 최대 1시간 두었다가 버리고, 쿠키나 방문 분석 도구도 쓰지 않아요.
+          </li>
+          <li>이미지 저장은 브라우저 안에서 처리되고, 공유는 직접 버튼을 누를 때만 동작해요.</li>
+          <li>
+            자세한 내용은{' '}
+            <a href="https://github.com/minji-kim0524/github-mbti#data--privacy" target="_blank" rel="noreferrer">
+              README의 Data &amp; privacy
+            </a>
+            에서 볼 수 있어요.
+          </li>
+        </ul>
       </section>
     </main>
   )
