@@ -152,10 +152,8 @@ export function App() {
 
   return (
     <main>
-      <h1>깃허브 MBTI</h1>
+      <h1>내 깃허브의 MBTI는 무엇일까?</h1>
       <p className="desc">
-        내 깃허브의 MBTI는 무엇일까?
-        <br />
         <small>*커밋 내역을 기반으로 측정됩니다.</small>
       </p>
 
