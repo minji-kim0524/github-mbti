@@ -25,7 +25,13 @@ button:disabled { opacity: 0.5; cursor: default; }
 button.secondary, .button.secondary { background: #fff; color: #6f42c1; border: 1px solid #d0bff2; }
 .share { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .card { display: block; max-width: 100%; margin-top: 24px; }
-pre { background: #fff; border: 1px solid #d0d7de; padding: 12px; border-radius: 8px; white-space: pre-wrap; word-break: break-all; font-size: 12px; }
+/* 섹션 제목 오른쪽 끝(스니펫 상자 위)에 복사 버튼을 둔다 */
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 28px; margin-bottom: 12px; }
+.section-head h2 { margin: 0; }
+/* 미리보기 버튼은 폼 안에서 입력란 높이(41px)로 늘어나므로 같은 높이로 맞춘다 */
+.section-head button { flex: none; min-height: 41px; }
+/* 스니펫은 잘리지 않도록 상자 폭에 맞춰 줄을 바꾼다 */
+pre { margin: 0; background: #fff; border: 1px solid #d0d7de; padding: 12px; border-radius: 8px; white-space: pre-wrap; word-break: break-all; font-size: 12px; }
 .error { color: #cf222e; }
 .guide { color: #57606a; font-size: 13px; line-height: 1.7; padding-left: 18px; }
 .guide a { color: #6f42c1; }

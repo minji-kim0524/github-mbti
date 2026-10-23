@@ -158,11 +158,13 @@ export function App() {
       </p>
 
       <section>
-        <h2>README에 붙여넣기</h2>
+        <div className="section-head">
+          <h2>README에 붙여넣기</h2>
+          <button type="button" onClick={() => copy('snippet', snippet)}>
+            {done === 'snippet' ? '복사됐어요' : '복사하기'}
+          </button>
+        </div>
         <pre>{snippet}</pre>
-        <button type="button" onClick={() => copy('snippet', snippet)}>
-          {done === 'snippet' ? '복사됐어요' : '복사하기'}
-        </button>
         <ul className="guide">
           <li>
             <code>{ID_PLACEHOLDER}</code> 자리(두 곳)에 내 GitHub 아이디를 넣어 주세요. 아래에 아이디를 입력하면 자동으로 채워져요.
