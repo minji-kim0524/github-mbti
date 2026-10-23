@@ -5,7 +5,7 @@ import { client } from './api'
 const AUTO_TIME_ZONE = 'auto'
 const TIME_ZONES = [AUTO_TIME_ZONE, 'Asia/Seoul', 'Asia/Tokyo', 'UTC', 'Europe/London', 'America/New_York', 'America/Los_Angeles']
 const ID_PLACEHOLDER = '{githubID}'
-/** 이 폭 이하 화면에서는 세로 배치(compact) 카드를 보여 준다. 가로 카드(700px)를 줄이면 글자를 읽기 어렵다 */
+/** 이 폭 이하 화면에서는 세로 배치(compact) 카드를 보여 준다. 가로 카드(600px)를 줄이면 글자를 읽기 어렵다 */
 const COMPACT_MEDIA = '(max-width: 599px)'
 /** 저장하는 PNG 해상도 배율 (고해상도 화면·SNS 에서 흐려지지 않게) */
 const PNG_SCALE = 2
@@ -16,10 +16,21 @@ type Result = {
   nickname: string
 }
 
-/** README에 붙여 넣을 스니펫. 사람이 읽고 고치기 쉽게 tz 는 인코딩하지 않는다. */
+/**
+ * README에 붙여 넣을 스니펫. 사람이 읽고 고치기 쉽게 tz 는 인코딩하지 않는다.
+ * README 이미지는 GitHub 테마를 따라가지 못하므로, <picture> 로 다크 테마에서는 theme=dark 카드를 고르게 한다
+ */
 function buildSnippet(login: string, timeZone: string): string {
   const origin = location.origin
-  return `<a href="${origin}"><img src="${origin}/api/card/${login}?tz=${timeZone}" alt="깃허브 MBTI" /></a>`
+  const card = `${origin}/api/card/${login}?tz=${timeZone}`
+  return [
+    `<a href="${origin}">`,
+    `  <picture>`,
+    `    <source media="(prefers-color-scheme: dark)" srcset="${card}&theme=dark" />`,
+    `    <img src="${card}" alt="깃허브 MBTI" />`,
+    `  </picture>`,
+    `</a>`,
+  ].join('\n')
 }
 
 /** 이 주소를 열면 같은 아이디·시간대로 바로 미리보기를 보여 준다 */
@@ -156,7 +167,10 @@ export function App() {
         </button>
         <ul className="guide">
           <li>
-            <code>{ID_PLACEHOLDER}</code> 자리에 내 GitHub 아이디를 넣어 주세요. 아래에 아이디를 입력하면 자동으로 채워져요.
+            <code>{ID_PLACEHOLDER}</code> 자리(두 곳)에 내 GitHub 아이디를 넣어 주세요. 아래에 아이디를 입력하면 자동으로 채워져요.
+          </li>
+          <li>
+            GitHub를 다크 테마로 보는 사람에게는 어두운 카드(<code>theme=dark</code>)가, 라이트 테마에서는 밝은 카드가 보여요.
           </li>
           <li>
             <code>tz=auto</code> 는 커밋 시각에 기록된 시간대로 자동 감지해요. 직접 지정하려면{' '}

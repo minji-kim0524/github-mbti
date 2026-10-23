@@ -9,7 +9,7 @@
 body { margin: 0; }
 /* 입력란·버튼은 기본적으로 폰트를 상속하지 않으므로 명시 */
 input, button, textarea, select { font-family: inherit; }
-/* 가로 카드(700px)가 줄어들지 않고 원래 크기로 보이도록 본문 폭을 맞춘다 */
+/* 가로 카드(600px)가 줄어들지 않고 원래 크기로 보이도록 본문 폭을 넉넉히 둔다 */
 main { max-width: 700px; margin: 0 auto; padding: 40px 16px; }
 h1 { color: #6f42c1; margin-bottom: 8px; }
 h2 { font-size: 16px; margin-top: 28px; }
