@@ -31,7 +31,13 @@ button.secondary { background: #fff; color: #6f42c1; border: 1px solid #d0bff2; 
 .section-head button { flex: none; min-height: 41px; }
 /* 스니펫은 잘리지 않도록 상자 폭에 맞춰 줄을 바꾼다 */
 pre { margin: 0; background: #fff; border: 1px solid #d0d7de; padding: 12px; border-radius: 8px; white-space: pre-wrap; word-break: break-all; font-size: 12px; }
-.error { color: #cf222e; }
+/* 분석 실패 모달. 여백은 안쪽 상자(.alert-body)에 두어, dialog 자체를 누른 경우(=배경 클릭)만 닫히게 한다 */
+.alert { width: min(360px, calc(100% - 32px)); padding: 0; border: 0; border-radius: 12px; box-shadow: 0 12px 32px rgba(31, 35, 40, 0.2); text-align: center; }
+.alert-body { padding: 24px; }
+.alert::backdrop { background: rgba(31, 35, 40, 0.45); }
+.alert h2 { margin: 0 0 8px; font-size: 17px; }
+.alert p { margin: 0 0 20px; color: #57606a; font-size: 14px; line-height: 1.6; }
+.alert button { width: 100%; }
 .guide { color: #57606a; font-size: 13px; line-height: 1.7; padding-left: 18px; }
 .guide a { color: #6f42c1; }
 code { background: #eeeaf7; padding: 1px 5px; border-radius: 4px; font-size: 12px; }

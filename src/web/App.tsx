@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Toaster, toast } from 'sonner'
 import { client } from './api'
 
 /** 커밋 시각의 오프셋으로 시간대를 자동 감지하라는 tz 값 */
@@ -60,10 +61,11 @@ export function App() {
   const [result, setResult] = useState<Result | null>(null)
   // 미리보기를 요청한 시점의 tz (선택 상자를 바꿔도 미리보기 카드와 어긋나지 않게 따로 둔다)
   const [previewTimeZone, setPreviewTimeZone] = useState(AUTO_TIME_ZONE)
+  // 분석 실패 안내. 결과 자리를 대신하는 내용이라 토스트가 아니라 모달로 띄운다
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  // 방금 끝난 동작(복사·저장 등). 버튼 글자를 잠깐 바꿔 알려 준다
-  const [done, setDone] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const dialogRef = useRef<HTMLDialogElement>(null)
 
   const user = login.trim()
   const snippet = buildSnippet(user || ID_PLACEHOLDER, timeZone)
@@ -101,18 +103,27 @@ export function App() {
     if (user) void preview(user, timeZone)
   }
 
-  const flash = (key: string) => {
-    setDone(key)
-    setTimeout(() => setDone((current) => (current === key ? null : current)), 1500)
+  useEffect(() => {
+    if (error) dialogRef.current?.showModal()
+  }, [error])
+
+  // 모달이 닫히면(버튼·Esc·바깥 클릭) 바로 다시 입력할 수 있게 아이디 입력란을 선택해 둔다
+  // 브라우저가 dialog 를 닫으며 이전 포커스를 되돌린 뒤에 옮겨야 하므로 다음 프레임에 실행한다
+  const onDialogClose = () => {
+    setError(null)
+    requestAnimationFrame(() => {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    })
   }
 
-  const copy = async (key: string, text: string) => {
+  const copy = async (text: string, message: string) => {
     try {
       await navigator.clipboard.writeText(text)
-      flash(key)
+      toast.success(message)
     } catch {
       // 클립보드 권한이 막힌 환경(일부 인앱 브라우저 등)
-      setError('복사하지 못했어요. 주소창의 주소를 직접 복사해 주세요.')
+      toast.error('복사하지 못했어요. 직접 선택해서 복사해 주세요.')
     }
   }
 
@@ -135,9 +146,9 @@ export function App() {
       a.download = fileName
       a.click()
       URL.revokeObjectURL(url)
-      flash('save')
+      toast.success('이미지를 저장했어요')
     } catch {
-      setError('이미지를 만들지 못했어요. 잠시 후 다시 시도해 주세요.')
+      toast.error('이미지를 만들지 못했어요. 잠시 후 다시 시도해 주세요.')
     }
   }
 
@@ -145,7 +156,7 @@ export function App() {
   // 지원하지 않는 브라우저에서는 결과 링크를 복사해 대신한다
   const share = async () => {
     if (typeof navigator.share !== 'function') {
-      await copy('share', shareUrl)
+      await copy(shareUrl, '결과 링크를 복사했어요')
       return
     }
     try {
@@ -154,7 +165,7 @@ export function App() {
       await navigator.share(data)
     } catch (e) {
       // 사용자가 공유 창을 닫은 경우는 오류가 아니다
-      if (!(e instanceof DOMException && e.name === 'AbortError')) setError('공유하지 못했어요. 링크 복사를 이용해 주세요.')
+      if (!(e instanceof DOMException && e.name === 'AbortError')) toast.error('공유하지 못했어요. 링크 복사를 이용해 주세요.')
     }
   }
 
@@ -173,8 +184,8 @@ export function App() {
       <section>
         <div className="section-head">
           <h2>README에 붙여넣기</h2>
-          <button type="button" onClick={() => copy('snippet', snippet)}>
-            {done === 'snippet' ? '복사됐어요' : '복사하기'}
+          <button type="button" onClick={() => copy(snippet, 'README 코드를 복사했어요')}>
+            복사하기
           </button>
         </div>
         <pre>{snippet}</pre>
@@ -200,6 +211,7 @@ export function App() {
         <h2>미리보기</h2>
         <form onSubmit={submit}>
           <input
+            ref={inputRef}
             placeholder="GitHub 아이디"
             value={login}
             onChange={(e) => setLogin(e.target.value)}
@@ -218,7 +230,6 @@ export function App() {
           </button>
         </form>
 
-        {error && <p className="error">{error}</p>}
         {result && (
           <>
             <picture>
@@ -227,13 +238,13 @@ export function App() {
             </picture>
             <div className="share" role="group" aria-label="결과 공유">
               <button type="button" onClick={savePng}>
-                {done === 'save' ? '저장됐어요' : '이미지 저장'}
+                이미지 저장
               </button>
-              <button type="button" className="secondary" onClick={() => copy('link', shareUrl)}>
-                {done === 'link' ? '복사됐어요' : '링크 복사'}
+              <button type="button" className="secondary" onClick={() => copy(shareUrl, '결과 링크를 복사했어요')}>
+                링크 복사
               </button>
               <button type="button" className="secondary" onClick={share}>
-                {done === 'share' ? '링크를 복사했어요' : '결과 공유하기'}
+                결과 공유하기
               </button>
             </div>
           </>
@@ -261,6 +272,24 @@ export function App() {
           </li>
         </ul>
       </section>
+
+      {/* 바깥(배경)을 누르면 닫는다. 안쪽 클릭은 target 이 .alert-body 나 그 자식이라 닫히지 않는다 */}
+      <dialog
+        ref={dialogRef}
+        className="alert"
+        aria-labelledby="alert-title"
+        onClose={onDialogClose}
+        onClick={(e) => e.target === e.currentTarget && dialogRef.current?.close()}
+      >
+        <div className="alert-body">
+          <h2 id="alert-title">결과를 불러오지 못했어요</h2>
+          <p>{error}</p>
+          <button type="button" onClick={() => dialogRef.current?.close()} autoFocus>
+            다시 입력하기
+          </button>
+        </div>
+      </dialog>
+      <Toaster position="bottom-center" toastOptions={{ style: { fontFamily: 'inherit' } }} />
     </main>
   )
 }
