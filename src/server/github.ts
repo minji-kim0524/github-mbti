@@ -1,4 +1,4 @@
-import { graphql } from '@octokit/graphql'
+import { graphql, GraphqlResponseError } from '@octokit/graphql'
 
 // GitHub GraphQL 조회. 사용자 1명당 쿼리 2번(약 7포인트)으로 끝나도록 필드를 최소화한다.
 
@@ -148,6 +148,12 @@ export async function fetchGitHubActivity(login: string, token: string): Promise
     login,
     from: from.toISOString(),
     to: to.toISOString(),
+  }).catch((error: unknown) => {
+    // 없는 아이디는 user: null 과 함께 NOT_FOUND 오류로 오고, @octokit/graphql 은 이를 예외로 던진다
+    if (error instanceof GraphqlResponseError && error.errors?.some((e) => e.type === 'NOT_FOUND')) {
+      throw new GitHubUserNotFoundError(login)
+    }
+    throw error
   })
   if (!user) throw new GitHubUserNotFoundError(login)
 
