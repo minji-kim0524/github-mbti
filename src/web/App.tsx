@@ -147,9 +147,6 @@ export function App() {
       : "";
 
   const shareUrl = result ? buildShareUrl(result.login, previewTimeZone) : "";
-  const shareText = result
-    ? `내 깃허브 MBTI는 ${result.type}, "${result.nickname}"! 당신의 깃허브 MBTI는?`
-    : "";
   const fileName = result ? `github-mbti-${result.login}.png` : "";
   // 화면에 보이는 것과 같은 배치(가로/세로)로 저장한다
   const visibleCardPath = () =>
@@ -166,28 +163,6 @@ export function App() {
       toast.success("이미지를 저장했어요");
     } catch {
       toast.error("이미지를 만들지 못했어요. 잠시 후 다시 시도해 주세요.");
-    }
-  };
-
-  // Web Share API 를 지원하면 시스템 공유 창을 띄운다. 이미지 파일을 받을 수 있는 곳이면 카드 PNG 도 함께 보낸다.
-  // 지원하지 않는 브라우저에서는 결과 링크를 복사해 대신한다
-  const share = async () => {
-    if (typeof navigator.share !== "function") {
-      await copy(shareUrl, "결과 링크를 복사했어요");
-      return;
-    }
-    try {
-      const file = new File([await svgToPng(visibleCardPath())], fileName, {
-        type: "image/png",
-      });
-      const data = navigator.canShare?.({ files: [file] })
-        ? { files: [file], text: shareText, url: shareUrl }
-        : { text: shareText, url: shareUrl };
-      await navigator.share(data);
-    } catch (e) {
-      // 사용자가 공유 창을 닫은 경우는 오류가 아니다
-      if (!(e instanceof DOMException && e.name === "AbortError"))
-        toast.error("공유하지 못했어요. 링크 복사를 이용해 주세요.");
     }
   };
 
@@ -286,9 +261,6 @@ export function App() {
               >
                 링크 복사
               </button>
-              <button type="button" className="secondary" onClick={share}>
-                결과 공유하기
-              </button>
             </div>
           </>
         )}
@@ -310,8 +282,7 @@ export function App() {
             두었다가 버리고, 쿠키나 방문 분석 도구도 쓰지 않아요.
           </li>
           <li>
-            이미지 저장은 브라우저 안에서 처리되고, 공유는 직접 버튼을 누를 때만
-            동작해요.
+            이미지 저장은 브라우저 안에서 처리되어 서버로 다시 보내지 않아요.
           </li>
           <li>
             자세한 내용은{" "}
