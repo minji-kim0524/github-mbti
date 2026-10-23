@@ -7,8 +7,8 @@ const HISTORY_REPO_LIMIT = 5
 
 export type GitHubActivity = {
   login: string
+  /** 프로필 이름 (설정하지 않았으면 null) */
   name: string | null
-  avatarUrl: string
   from: string
   to: string
   totals: {
@@ -36,7 +36,6 @@ type ContributionsResponse = {
     id: string
     login: string
     name: string | null
-    avatarUrl: string
     contributionsCollection: {
       totalCommitContributions: number
       totalPullRequestContributions: number
@@ -64,7 +63,6 @@ const CONTRIBUTIONS_QUERY = /* GraphQL */ `
       id
       login
       name
-      avatarUrl
       contributionsCollection(from: $from, to: $to) {
         totalCommitContributions
         totalPullRequestContributions
@@ -181,7 +179,6 @@ export async function fetchGitHubActivity(login: string, token: string): Promise
   return {
     login: user.login,
     name: user.name,
-    avatarUrl: user.avatarUrl,
     from: from.toISOString(),
     to: to.toISOString(),
     totals: {
