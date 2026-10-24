@@ -30,27 +30,14 @@ GitHub 공개 활동을 분석해 4글자 개발자 유형을 카드로 보여 �
 
 ### 프로필 README에 붙이기
 
-1. 아래 코드를 복사합니다. GitHub를 다크 테마로 보는 사람에게는 다크 카드, 라이트 테마로 보는 사람에게는 라이트 카드가 보입니다.
+1. 아래 코드를 복사합니다.
 
-   ```html
-   <a href="https://github-mbti-whoami.vercel.app">
-     <picture>
-       <source
-         media="(prefers-color-scheme: dark)"
-         srcset="
-           https://github-mbti-whoami.vercel.app/api/card/{githubID}?tz=auto&theme=dark
-         "
-       />
-       <img
-         src="https://github-mbti-whoami.vercel.app/api/card/{githubID}?tz=auto"
-         alt="깃허브 MBTI"
-       />
-     </picture>
-   </a>
+   ```md
+   [![깃허브 MBTI](https://github-mbti-whoami.vercel.app/api/card/{githubID})](https://github-mbti-whoami.vercel.app)
    ```
 
-2. `{githubID}` 두 곳을 모두 내 GitHub 아이디로 바꿉니다.
-3. 필요하면 `tz`·`layout` 값을 바꿉니다 (아래 표 참고). 두 주소에 같은 값을 넣어 주세요.
+2. `{githubID}`를 내 GitHub 아이디로 바꿉니다.
+3. 필요하면 카드 주소 끝에 `?tz=Asia/Seoul&layout=compact`처럼 파라미터를 붙입니다 (아래 표 참고).
 4. 내 프로필 README(`<아이디>/<아이디>` 저장소의 `README.md`)에 붙여 넣으면 카드가 표시됩니다.
 
 | 파라미터 | 값                                  | 동작                                                                                                                                     |
@@ -64,7 +51,22 @@ GitHub 공개 활동을 분석해 4글자 개발자 유형을 카드로 보여 �
 
 - 서버·CI·컨테이너에서 커밋하면 시간대가 `UTC`로 잡힐 수 있어요. 카드 하단에 감지된 시간대가 표시되니, 실제와 다르면 `tz`를 직접 지정하세요.
 - 카드는 1시간 동안 캐싱되므로 새 커밋이 바로 반영되지는 않아요.
-- 한 가지 테마만 쓰고 싶다면 `<picture>`·`<source>` 없이 `<img>` 하나만 남기고, 필요하면 `&theme=dark`를 붙이세요.
+- 마크다운 이미지 문법으로는 크기를 바꿀 수 없어요. 카드 크기를 바꾸려면 HTML `<img>`의 `width`를 써 주세요.
+
+  ```html
+  <a href="https://github-mbti-whoami.vercel.app"><img src="https://github-mbti-whoami.vercel.app/api/card/{githubID}" width="400" alt="깃허브 MBTI" /></a>
+  ```
+
+- 마크다운 이미지는 GitHub 테마를 따라가지 않아서 다크 테마에서도 라이트 카드가 보여요. 보는 사람의 테마에 맞춰 카드를 바꾸려면 `<picture>`를 써 주세요.
+
+  ```html
+  <a href="https://github-mbti-whoami.vercel.app">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://github-mbti-whoami.vercel.app/api/card/{githubID}?theme=dark" />
+      <img src="https://github-mbti-whoami.vercel.app/api/card/{githubID}" alt="깃허브 MBTI" />
+    </picture>
+  </a>
+  ```
 
 ## How it works
 

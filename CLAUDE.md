@@ -11,11 +11,11 @@ GitHub 공개 활동(커밋 시각·잔디·언어·협업)을 분석해 4글자
 GitHub 프로필 README는 JS를 실행하지 않으므로, github-readme-stats처럼 **서버가 동적 SVG 카드를 생성**한다.
 
 ```md
-<a href="https://github-mbti-whoami.vercel.app"><img src="https://github-mbti-whoami.vercel.app/api/card/{githubID}?tz=auto" alt="깃허브 MBTI" /></a>
+[![깃허브 MBTI](https://github-mbti-whoami.vercel.app/api/card/{githubID})](https://github-mbti-whoami.vercel.app)
 ```
 
 - `GET /api/card/:user?tz=&layout=&theme=` → MBTI 카드 SVG. `layout=compact` 는 좁은 화면용 세로 배치(360px), 생략하면 가로 배치(600px). 웹 미리보기는 599px 이하 화면에서 compact 를 쓴다
-- `theme=dark` 는 어두운 카드, 생략하면 연한 배경의 라이트 카드. README 스니펫은 `<picture>` + `prefers-color-scheme` 으로 GitHub 테마에 맞는 카드를 고른다
+- `theme=dark` 는 어두운 카드, 생략하면 연한 배경의 라이트 카드. README 스니펫은 마크다운 한 줄(라이트 카드)이고, GitHub 테마에 맞추려면 `<picture>` + `prefers-color-scheme` 을 쓴다 (README 에 안내)
 - `tz=auto` 또는 생략 시 커밋 시각(`author.date`)의 오프셋으로 시간대를 **자동 감지**한다. 지정하면 그 IANA 시간대로 변환해 판정한다. 커밋 시각 데이터가 없으면 `Asia/Seoul`.
 - `GET /api/mbti/:user?tz=` → 판정 결과 JSON (웹 랜딩에서 사용)
 
@@ -52,7 +52,7 @@ Next.js·모노레포는 쓰지 않는다 (SSR 이점이 없고, 패키지 하�
 index.html, vite.config.ts   Vite 진입점 (dev 서버가 /api 를 8787 로 프록시)
 vercel.json    Vercel 설정 (/api/* → api/index.ts 로 rewrite)
 api/index.ts   Vercel Function 진입점 (src/server/app.ts 를 default export)
-src/web/       랜딩: README 스니펫 템플릿({githubID}, tz) 복사 + 아이디 입력 시 카드 미리보기
+src/web/       랜딩: README 스니펫 템플릿({githubID}, 직접 고른 tz) 복사 + 아이디 입력 시 카드 미리보기
 src/server/
   app.ts       Hono 라우트, 메모리 캐시, AppType export
   github.ts    GraphQL 쿼리 2개 (기여 내역 / 상위 저장소 커밋 시각)
