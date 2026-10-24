@@ -44,8 +44,8 @@ const LAYOUTS = {
 } satisfies Record<CardLayout, { width: number; iconSize: number; iconColumns: number; nameLength: number }>
 
 /**
- * 카드 색 테마. README 는 <img> 라 GitHub 테마를 따라가지 못하므로, 라이트/다크 카드를 따로 만들어
- * <picture> 의 prefers-color-scheme 으로 골라 쓰게 한다. 생략하면 light
+ * 카드 색 테마. README 는 <img> 라 GitHub 테마를 따라가지 못하므로 라이트/다크 카드를 따로 만든다.
+ * 기본 스니펫은 라이트 카드 하나이고, 원하면 theme=dark 를 붙이거나 <picture> 로 테마별로 고를 수 있다. 생략하면 light
  */
 export type CardTheme = 'light' | 'dark'
 export const CARD_THEMES: readonly CardTheme[] = ['light', 'dark']
