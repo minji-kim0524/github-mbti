@@ -55,6 +55,8 @@ function consumeLookup(client: string): boolean {
   const now = Date.now()
   const entry = lookupCounts.get(client)
   if (!entry || entry.resetAt <= now) {
+    // 같은 키를 덮어쓰면 예전 순서가 유지돼 가장 먼저 지워지므로, 지운 뒤 맨 뒤에 다시 넣는다
+    lookupCounts.delete(client)
     lookupCounts.set(client, { resetAt: now + LOOKUP_WINDOW_MS, count: 1 })
     prune(lookupCounts, MAX_TRACKED_CLIENTS, (e) => e.resetAt <= now)
     return true
@@ -75,6 +77,8 @@ function getActivity(login: string, client: string): Promise<GitHubActivity> {
   if (!consumeLookup(client)) throw new RateLimitedError()
 
   const promise = fetchGitHubActivity(login, token)
+  // 만료된 항목을 덮어쓰면 예전 순서가 유지돼 정리 때 가장 먼저 지워지므로, 지운 뒤 맨 뒤에 다시 넣는다
+  activityCache.delete(key)
   activityCache.set(key, { expiresAt: Date.now() + CACHE_TTL_MS, promise })
   prune(activityCache, MAX_CACHED_USERS, (e) => e.expiresAt <= Date.now())
   // 실패한 결과는 캐시하지 않는다
