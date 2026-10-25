@@ -18,6 +18,18 @@ const ID_PLACEHOLDER = "{githubID}";
 const COMPACT_MEDIA = "(max-width: 599px)";
 /** 저장하는 PNG 해상도 배율 (고해상도 화면·SNS 에서 흐려지지 않게) */
 const PNG_SCALE = 2;
+/**
+ * iPhone·iPad 인지. 다운로드한 파일이 사진 앱이 아니라 파일 앱으로 가서, 공유 시트로 저장하게 한다
+ * (Android 는 다운로드 폴더가 갤러리에 바로 보이므로 다운로드로 충분하다).
+ * iPadOS 는 Mac 처럼 보이는 user agent 를 쓰므로 터치 지원 여부로 구분한다
+ */
+function isAppleMobile(): boolean {
+  const ua = navigator.userAgent;
+  return (
+    /iPhone|iPad|iPod/.test(ua) ||
+    (ua.includes("Macintosh") && navigator.maxTouchPoints > 1)
+  );
+}
 
 type Result = {
   login: string;
@@ -145,18 +157,56 @@ export function App() {
   const visibleCardPath = () =>
     cardPath(matchMedia(COMPACT_MEDIA).matches ? "compact" : undefined);
 
+  // 공유 시트는 버튼을 누른 직후에만 열 수 있어서(iOS Safari 는 비동기 작업이 길면 거부한다)
+  // 결과가 나오면 PNG 를 미리 만들어 둔다
+  const pngCache = useRef<{ path: string; png: Promise<Blob> } | null>(null);
+  useEffect(() => {
+    if (!result) return;
+    const path = visibleCardPath();
+    const png = svgToPng(path);
+    // 미리 만들다 실패해도 버튼을 누를 때 다시 만든다
+    png.catch(() => {});
+    pngCache.current = { path, png };
+  }, [result, previewTimeZone]);
+
+  const download = (blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("이미지가 저장되었습니다.");
+  };
+
   const savePng = async () => {
+    const path = visibleCardPath();
+    let blob: Blob;
     try {
-      const url = URL.createObjectURL(await svgToPng(visibleCardPath()));
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("이미지를 저장했어요");
+      const cached = pngCache.current;
+      blob = await (cached?.path === path
+        ? cached.png.catch(() => svgToPng(path))
+        : svgToPng(path));
     } catch {
       toast.error("이미지를 만들지 못했어요. 잠시 후 다시 시도해 주세요.");
+      return;
     }
+
+    // 웹페이지는 사진 앱에 바로 쓸 수 없어서, iPhone·iPad 는 공유 시트의 '이미지 저장'으로 저장하게 한다.
+    // 시트에서 무엇을 골랐는지는 알 수 없으므로 저장 완료 대신 방법을 먼저 안내한다
+    const file = new File([blob], fileName, { type: blob.type });
+    if (isAppleMobile() && navigator.canShare?.({ files: [file] })) {
+      toast("공유 메뉴에서 '이미지 저장'을 누르면 사진 앱에 저장돼요");
+      try {
+        await navigator.share({ files: [file] });
+        return;
+      } catch (e) {
+        // 사용자가 공유 시트를 닫은 경우
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        // 그 밖의 공유 실패는 파일 다운로드로 대신한다
+      }
+    }
+    download(blob);
   };
 
   return (
