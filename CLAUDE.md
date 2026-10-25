@@ -19,7 +19,7 @@ GitHub 프로필 README는 JS를 실행하지 않으므로, github-readme-stats�
 - `tz=auto` 또는 생략 시 커밋 시각(`author.date`)의 오프셋으로 시간대를 **자동 감지**한다. 지정하면 그 IANA 시간대로 변환해 판정한다. 커밋 시각 데이터가 없으면 `Asia/Seoul`.
 - `GET /api/mbti/:user?tz=` → 판정 결과 JSON (웹 랜딩에서 사용)
 
-## MBTI 4축 (초안 — 이름·기준 추후 변경 예정)
+## MBTI 4축 (이름 확정 — 기준값은 조정 중)
 
 | 축 | 글자 | 기준 | GraphQL 데이터 |
 | --- | --- | --- | --- |
