@@ -50,7 +50,7 @@ Next.js·모노레포는 쓰지 않는다 (SSR 이점이 없고, 패키지 하�
 
 ```
 index.html, vite.config.ts   Vite 진입점 (dev 서버가 /api 를 8787 로 프록시)
-vercel.json    Vercel 설정 (/api/* → api/index.ts 로 rewrite)
+vercel.json    Vercel 설정 (/api/* → api/index.ts 로 rewrite, dependabot/** 브랜치는 배포하지 않음)
 api/index.ts   Vercel Function 진입점 (src/server/app.ts 를 default export)
 src/web/       랜딩: README 스니펫 템플릿({githubID}, 직접 고른 tz) 복사 + 아이디 입력 시 카드 미리보기
 src/server/
@@ -89,6 +89,7 @@ pnpm build
 - 조회 결과는 메모리 캐시 아래에 **Vercel Runtime Cache**(`getCache`, 7일 TTL)를 둔다. 배포·인스턴스가 바뀌어도 남아서 콜드 요청도 GitHub 를 다시 부르지 않는다. 저장한 지 1시간이 지난 결과는 바로 쓰고 새 결과는 `waitUntil` 로 뒤에서 받아 바꾼다 (stale-while-revalidate). 로컬·테스트에서는 `@vercel/functions` 가 메모리 캐시로 대신한다. 보관 기간을 바꾸면 README·웹의 개인정보 안내도 함께 고친다.
 - `src/web` 은 `src/server` 에서 `import type` 만 한다 (서버 런타임 코드가 웹 번들에 섞이지 않게).
 - 판정 기준값·축 이름·별명은 `src/server/analyze.ts` 에 모아 두고, 판정 함수는 순수 함수로 유지한다.
+- Dependabot 브랜치는 Vercel 이 빌드하지 않는다(`vercel.json` 의 `git.deploymentEnabled`). 검토 전 의존성 코드가 `GITHUB_TOKEN` 이 있는 프리뷰 빌드에서 실행되지 않게 하려는 것이므로 이 설정을 지우지 않는다.
 - `.env*` 파일(`.env.example` 포함)은 **절대 커밋하지 않는다**. 필요한 환경변수는 README에 문서화한다.
 - 라이브러리 API는 기억에 의존하지 말고 설치된 버전의 문서(node_modules 내 타입/README, 공식 문서)를 확인한다.
 - 변수 선언에 `var` 를 쓰지 않는다. `const` 를 기본으로 하고, 재할당이 필요할 때만 `let` 을 쓴다.

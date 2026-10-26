@@ -278,4 +278,4 @@ pnpm dev
 2. Project Settings → Environment Variables 에 `GITHUB_TOKEN`을 추가합니다.
 3. 배포가 끝나면 README의 카드 주소를 실제 도메인으로 바꿉니다.
 
-이후 `main`에 push 하면 자동으로 다시 배포됩니다.
+이후 `main`에 push 하면 자동으로 다시 배포됩니다. Dependabot 브랜치(`dependabot/**`)는 프리뷰를 만들지 않습니다(`vercel.json`의 `git.deploymentEnabled`). 검토하지 않은 의존성 업데이트가 `GITHUB_TOKEN`이 들어 있는 빌드에서 실행되지 않게 하려는 것이고, 테스트·빌드 검사는 GitHub Actions CI(비밀값 없음, 읽기 권한)에서 그대로 돌아갑니다.
