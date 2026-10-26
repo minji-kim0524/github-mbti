@@ -87,8 +87,7 @@ function getActivity(login: string, client: string): Promise<GitHubActivity> {
 }
 
 type Outcome =
-  | { ok: true; result: ReturnType<typeof analyze> }
-  | { ok: false; status: 400 | 404 | 429 | 500; message: string }
+  { ok: true; result: ReturnType<typeof analyze> } | { ok: false; status: 400 | 404 | 429 | 500; message: string }
 
 /** 오류 응답의 캐시 정책. 요청 제한은 요청한 사람에게만 해당하므로 캐싱하지 않는다 */
 function errorCacheControl(status: number): string {

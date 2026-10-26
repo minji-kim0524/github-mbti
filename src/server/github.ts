@@ -47,7 +47,12 @@ type ContributionsResponse = {
       }
       commitContributionsByRepository: {
         contributions: { totalCount: number }
-        repository: { name: string; isFork: boolean; owner: { login: string }; primaryLanguage: { name: string } | null }
+        repository: {
+          name: string
+          isFork: boolean
+          owner: { login: string }
+          primaryLanguage: { name: string } | null
+        }
       }[]
       pullRequestContributionsByRepository: {
         contributions: { totalCount: number }

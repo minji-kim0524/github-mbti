@@ -3,14 +3,17 @@ import { ICONS } from './icons.js'
 
 /** SVG(XML)에 넣는 모든 외부 입력은 반드시 이 함수를 거친다. */
 export function escapeXml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
-    // XML 1.0에서 허용되지 않는 제어 문자 제거
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+  return (
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;')
+      // XML 1.0에서 허용되지 않는 제어 문자 제거 (제어 문자를 일부러 찾는 정규식이라 규칙을 끈다)
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+  )
 }
 
 const PADDING = 24

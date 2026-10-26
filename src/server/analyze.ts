@@ -249,7 +249,9 @@ const NICKNAME_PARTS: Record<string, string> = {
  * @param timeZone IANA 시간대. 생략하면 커밋 시각의 오프셋으로 자동 감지한다.
  */
 export function analyze(activity: GitHubActivity, timeZone?: string): MbtiResult {
-  const offset = timeZone ? null : dominantOffset(activity.commitTimestamps.map(parseLocalTime).filter((t) => t !== null))
+  const offset = timeZone
+    ? null
+    : dominantOffset(activity.commitTimestamps.map(parseLocalTime).filter((t) => t !== null))
   // 자동 감지할 커밋 시각이 없으면 기본 시간대로 판정한다
   const effectiveTimeZone = timeZone ?? (offset ? undefined : DEFAULT_TIME_ZONE)
   const axes = [timeAxis(activity, effectiveTimeZone), rhythmAxis(activity), scopeAxis(activity), collabAxis(activity)]

@@ -111,10 +111,12 @@ export function App() {
     }
   };
 
+  // 공유 링크로 처음 들어왔을 때 한 번만 결과를 불러온다 (서버 조회라 effect 에서 상태를 바꾼다)
   useEffect(() => {
     const shared = initial.get("user")?.trim();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (shared) void preview(shared, initial.get("tz") ?? AUTO_TIME_ZONE);
-    // 처음 들어왔을 때 한 번만 실행한다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const submit = (e: FormEvent) => {
@@ -167,6 +169,8 @@ export function App() {
     // 미리 만들다 실패해도 버튼을 누를 때 다시 만든다
     png.catch(() => {});
     pngCache.current = { path, png };
+    // visibleCardPath 는 result·previewTimeZone 으로만 바뀌는 함수라 그 둘만 의존한다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, previewTimeZone]);
 
   const download = (blob: Blob) => {
