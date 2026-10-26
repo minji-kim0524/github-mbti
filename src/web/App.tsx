@@ -16,6 +16,12 @@ const TIME_ZONES = [
 const ID_PLACEHOLDER = "{githubID}";
 /** 이 폭 이하 화면에서는 세로 배치(compact) 카드를 보여 준다. 가로 카드(600px)를 줄이면 글자를 읽기 어렵다 */
 const COMPACT_MEDIA = "(max-width: 599px)";
+/**
+ * 스니펫 카드를 미리 불러올 때, 서버가 아직 만드는 중(no-store)이면 다시 시도하는 간격과 횟수.
+ * 서버는 카드 응답을 3초까지만 기다리고, 그 사이에도 조회를 계속하므로 조금 뒤 다시 부르면 완성된 카드를 받는다
+ */
+const WARM_RETRY_MS = 3000;
+const WARM_RETRIES = 2;
 /** 저장하는 PNG 해상도 배율 (고해상도 화면·SNS 에서 흐려지지 않게) */
 const PNG_SCALE = 2;
 /**
@@ -38,13 +44,31 @@ type Result = {
 };
 
 /**
- * README에 붙여 넣을 마크다운 한 줄. 사람이 읽고 고치기 쉽게 tz 는 인코딩하지 않는다.
+ * README 스니펫에 들어가는 카드 주소. 사람이 읽고 고치기 쉽게 tz 는 인코딩하지 않는다.
  * tz 는 생략하면 auto 와 같으므로 직접 고른 경우에만 붙인다
  */
-function buildSnippet(login: string, timeZone: string): string {
-  const origin = location.origin;
+function buildCardUrl(login: string, timeZone: string): string {
   const query = timeZone === AUTO_TIME_ZONE ? "" : `?tz=${timeZone}`;
-  return `[![깃허브 MBTI](${origin}/api/card/${login}${query})](${origin})`;
+  return `${location.origin}/api/card/${login}${query}`;
+}
+
+/** README에 붙여 넣을 마크다운 한 줄 */
+function buildSnippet(login: string, timeZone: string): string {
+  return `[![깃허브 MBTI](${buildCardUrl(login, timeZone)})](${location.origin})`;
+}
+
+/**
+ * 스니펫과 똑같은 주소의 카드를 한 번 불러 CDN 에 캐시해 둔다.
+ * README 에 붙여 넣은 뒤 GitHub 이미지 프록시(camo)가 처음 요청할 때 기다리지 않고 바로 받아 가게 하려는 것이다
+ */
+async function warmCard(url: string): Promise<void> {
+  for (let attempt = 0; attempt <= WARM_RETRIES; attempt++) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, WARM_RETRY_MS));
+    }
+    const res = await fetch(url);
+    if (res.headers.get("Cache-Control") !== "no-store") return;
+  }
 }
 
 /** 이 주소를 열면 같은 아이디·시간대로 바로 미리보기를 보여 준다 */
@@ -152,6 +176,18 @@ export function App() {
     result
       ? `/api/card/${encodeURIComponent(result.login)}?${new URLSearchParams({ tz: previewTimeZone, ...(layout && { layout }) })}`
       : "";
+
+  // 미리보기한 아이디의 스니펫 카드를 미리 불러 둔다. 입력 중인 다른 아이디는 부르지 않도록 결과와 같을 때만,
+  // 같은 주소는 한 번만 부른다 (CDN 캐시는 1시간 유지된다)
+  const warmed = useRef(new Set<string>());
+  useEffect(() => {
+    if (!result || user.toLowerCase() !== result.login.toLowerCase()) return;
+    const url = buildCardUrl(user, timeZone);
+    if (warmed.current.has(url)) return;
+    warmed.current.add(url);
+    // 미리 불러오기는 보조 기능이라 실패해도 알리지 않는다
+    warmCard(url).catch(() => warmed.current.delete(url));
+  }, [result, user, timeZone]);
 
   const shareUrl = result ? buildShareUrl(result.login, previewTimeZone) : "";
   const fileName = result ? `github-mbti-${result.login}.png` : "";
