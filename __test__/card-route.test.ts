@@ -30,7 +30,7 @@ describe('카드 응답 시간 제한', () => {
     fetchGitHubActivity.mockReset()
   })
 
-  test('조회가 3초 안에 끝나면 완성된 카드를 1시간 캐싱한다', async () => {
+  test('조회가 2초 안에 끝나면 완성된 카드를 1시간 캐싱한다', async () => {
     fetchGitHubActivity.mockResolvedValue(activity('fast-user'))
     const res = await app.request('/api/card/fast-user')
     expect(res.status).toBe(200)
@@ -38,13 +38,13 @@ describe('카드 응답 시간 제한', () => {
     expect(await res.text()).toContain('fast-user')
   })
 
-  test('3초가 지나면 안내 카드를 캐싱하지 않고 보내고, 조회는 계속해 다음 요청에 쓴다', async () => {
+  test('2초가 지나면 안내 카드를 캐싱하지 않고 보내고, 조회는 계속해 다음 요청에 쓴다', async () => {
     jest.useFakeTimers()
     let finish: (value: GitHubActivity) => void = () => {}
     fetchGitHubActivity.mockReturnValue(new Promise((resolve) => (finish = resolve)))
 
     const pending = app.request('/api/card/slow-user')
-    await jest.advanceTimersByTimeAsync(3000)
+    await jest.advanceTimersByTimeAsync(2000)
     const res = await pending
     expect(res.status).toBe(200)
     expect(res.headers.get('Cache-Control')).toBe('no-store')

@@ -18,7 +18,7 @@ const ID_PLACEHOLDER = "{githubID}";
 const COMPACT_MEDIA = "(max-width: 599px)";
 /**
  * 스니펫 카드를 미리 불러올 때, 서버가 아직 만드는 중(no-store)이면 다시 시도하는 간격과 횟수.
- * 서버는 카드 응답을 3초까지만 기다리고, 그 사이에도 조회를 계속하므로 조금 뒤 다시 부르면 완성된 카드를 받는다
+ * 서버는 카드 응답을 2초까지만 기다리고, 그 사이에도 조회를 계속하므로 조금 뒤 다시 부르면 완성된 카드를 받는다
  */
 const WARM_RETRY_MS = 3000;
 const WARM_RETRIES = 2;
