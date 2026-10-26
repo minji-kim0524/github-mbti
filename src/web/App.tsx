@@ -274,6 +274,10 @@ export function App() {
         <pre>{snippet}</pre>
         <ul className="guide">
           <li>
+            <b>아이디를 입력하고 미리보기를 먼저 진행해 주세요.</b> 미리보기를
+            하지 않으면 카드가 결과를 불러오는 데 최대 5분 정도 걸릴 수 있어요.
+          </li>
+          <li>
             <code>{ID_PLACEHOLDER}</code> 자리에 내 GitHub 아이디를 넣어 주세요.
             아래에 아이디를 입력하면 자동으로 채워져요.
           </li>
