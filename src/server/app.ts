@@ -1,3 +1,4 @@
+import { waitUntil } from '@vercel/functions'
 import { Hono, type Context } from 'hono'
 import { validator } from 'hono/validator'
 import { analyze, isValidTimeZone } from './analyze.js'
@@ -30,6 +31,13 @@ const MAX_ECHO_LENGTH = 40
 
 // 서버 메모리 캐시 (login 소문자 → 조회 결과). 같은 사용자의 동시 요청은 하나의 Promise 를 공유한다.
 const UNMEASURABLE_MESSAGE = '최근 1년 공개 활동이 없어 MBTI를 측정할 수 없어요.'
+
+/**
+ * 카드 응답을 기다리는 최대 시간. GitHub 이미지 프록시(camo)는 약 4.2초 안에 응답이 끝나지 않으면 이미지를 깨뜨리고,
+ * 헤더만 도착하고 본문이 잘리면 빈 이미지를 그대로 캐싱한다. 콜드 스타트·네트워크 시간을 빼고 여유를 두어 3초로 잡는다
+ */
+const CARD_TIME_BUDGET_MS = 3000
+const PREPARING_MESSAGE = '카드를 만드는 중이에요. 잠시 후 새로고침해 주세요.'
 
 /** 시간대를 커밋 시각으로 자동 감지하라는 tz 값 */
 const AUTO_TIME_ZONE = 'auto'
@@ -84,6 +92,19 @@ function getActivity(login: string, client: string): Promise<GitHubActivity> {
   // 실패한 결과는 캐시하지 않는다
   promise.catch(() => activityCache.delete(key))
   return promise
+}
+
+/** ms 안에 끝나면 결과를, 아니면 undefined 를 돌려준다. 원래 작업은 멈추지 않는다 */
+async function within<T>(promise: Promise<T>, ms: number): Promise<T | undefined> {
+  let timer: Parameters<typeof clearTimeout>[0]
+  const timeout = new Promise<undefined>((resolve) => {
+    timer = setTimeout(resolve, ms)
+  })
+  try {
+    return await Promise.race([promise, timeout])
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 type Outcome =
@@ -146,7 +167,10 @@ const app = new Hono()
   .get('/card/:user', async (c) => {
     // README에서 `/api/card/minji.svg` 형태로도 쓸 수 있게 확장자 허용
     const user = c.req.param('user').replace(/\.svg$/, '')
-    const outcome = await evaluate(user, c.req.query('tz'), clientKey(c))
+    const pending = evaluate(user, c.req.query('tz'), clientKey(c))
+    // 시간 안에 못 끝내고 먼저 응답하더라도 조회는 끝까지 마쳐 메모리 캐시에 남긴다 (Vercel 이 아니면 아무 일도 하지 않는다)
+    waitUntil(pending)
+    const outcome = await within(pending, CARD_TIME_BUDGET_MS)
     // layout=compact 는 좁은 화면용 세로 배치. 모르는 값은 무시하고 기본(wide) 배치로 그린다
     const layoutQuery = c.req.query('layout')
     const layout = CARD_LAYOUTS.find((l) => l === layoutQuery) ?? 'wide'
@@ -158,6 +182,11 @@ const app = new Hono()
     c.header('X-Content-Type-Options', 'nosniff')
     // SVG를 직접 열었을 때 스크립트 실행 차단 (방어적 조치)
     c.header('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'")
+    // 아직 만드는 중이면 안내 카드를 보내고 캐싱하지 않아, 다음 조회 때 완성된 카드를 받게 한다
+    if (!outcome) {
+      c.header('Cache-Control', NO_STORE)
+      return c.body(renderErrorCard(PREPARING_MESSAGE, theme))
+    }
     // README(camo)는 200 이 아니면 이미지를 깨진 상태로 보여 주므로, 오류도 200 + 오류 카드로 응답한다
     if (!outcome.ok) {
       c.header('Cache-Control', errorCacheControl(outcome.status))

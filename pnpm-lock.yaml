@@ -16,6 +16,9 @@ importers:
       '@octokit/graphql':
         specifier: ^9.0.5
         version: 9.0.5
+      '@vercel/functions':
+        specifier: ^3.10.3
+        version: 3.10.3(ws@8.22.0)
       hono:
         specifier: ^4.13.13
         version: 4.13.13
@@ -1963,6 +1966,18 @@ packages:
     resolution: {integrity: sha512-c05ioJxn3ShXAPoQAX7UbLVaKw7HSMDfJt2yljfCsDqGHN+Iw6mK4AMor4vcA+zsGFPngmJO0kVWP4zF2Q9rTQ==}
     engines: {node: '>= 20'}
 
+  '@vercel/functions@3.10.3':
+    resolution: {integrity: sha512-EjMUf+myWckV9vj5FbzRG1wQP1IFRgmlOu2ho1FiFTjLs1mFnY4dxeI8Swk9pszj4jv/jGdvlmqRKHipuEt5bw==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      '@aws-sdk/credential-provider-web-identity': '*'
+      ws: '>=8'
+    peerDependenciesMeta:
+      '@aws-sdk/credential-provider-web-identity':
+        optional: true
+      ws:
+        optional: true
+
   '@vercel/gatsby-plugin-vercel-analytics@1.0.12':
     resolution: {integrity: sha512-Ejlhwxr7EBYJxtwYnlh6Vm6A2dPsUSPxMdYrfv0koZkgAzVwo7cG4aDQiy7iASMaGzwuI/PAnwlY2sJBF5b4OA==}
 
@@ -2020,6 +2035,10 @@ packages:
 
   '@vercel/oidc@3.8.10':
     resolution: {integrity: sha512-sPw1kIfQEA6/2dB+zlAJHnhhNBRJ8t/t4HfFvKO+g0EPBA7NbCKyGovuhgAV6Mnl865ka7HqCEguIy596czdAw==}
+    engines: {node: '>= 20'}
+
+  '@vercel/oidc@4.0.3':
+    resolution: {integrity: sha512-0sljpA/leE1vLkY7DVOs/z/OH6x1hgKhrF+IY2YdbRYm/6UnQjeu0SMnzOKLtkJWp13srUFkWdir4iU3feFYfg==}
     engines: {node: '>= 20'}
 
   '@vercel/prepare-flags-definitions@0.6.1':
@@ -5611,6 +5630,12 @@ snapshots:
       - encoding
       - supports-color
 
+  '@vercel/functions@3.10.3(ws@8.22.0)':
+    dependencies:
+      '@vercel/oidc': 4.0.3
+    optionalDependencies:
+      ws: 8.22.0
+
   '@vercel/gatsby-plugin-vercel-analytics@1.0.12':
     dependencies:
       web-vitals: 0.2.4
@@ -5753,6 +5778,12 @@ snapshots:
   '@vercel/oidc@3.8.10':
     dependencies:
       '@vercel/cli-config': 0.3.1
+      '@vercel/cli-exec': 1.0.1
+      jose: 5.9.6
+
+  '@vercel/oidc@4.0.3':
+    dependencies:
+      '@vercel/cli-config': 0.3.3
       '@vercel/cli-exec': 1.0.1
       jose: 5.9.6
 
