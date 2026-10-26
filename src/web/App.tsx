@@ -259,6 +259,10 @@ export function App() {
             <code>&lt;img src="카드 주소" width="400" /&gt;</code> 처럼 HTML로
             써 주세요.
           </li>
+          <li>
+            README 카드는 1시간 동안 캐싱돼요. 새 커밋이나 판정 기준 변경은 최대
+            1시간 뒤에 반영되니, 아래 미리보기와 잠시 다를 수 있어요.
+          </li>
         </ul>
       </section>
 
