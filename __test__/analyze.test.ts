@@ -111,31 +111,48 @@ describe('범위 축 (최다 언어 비율 60%)', () => {
   })
 })
 
-describe('협업 축 (팀 저장소 커밋 25% 또는 팀 PR + 리뷰 30)', () => {
+describe('협업 축 (팀 저장소 커밋한 날 + 팀 PR + 리뷰 비율 50%)', () => {
   const totals = makeActivity().totals
 
-  test('팀 저장소 커밋 비율이 25% 이상이면 T', () => {
-    const repositories = [repo({ owner: 'octocat', commitDays: 3 }), repo({ owner: 'some-org', commitDays: 1 })]
+  test('팀 저장소 커밋 비율이 50% 이상이면 T', () => {
+    const repositories = [repo({ owner: 'octocat', commitDays: 1 }), repo({ owner: 'some-org', commitDays: 1 })]
     expect(axisOf(makeActivity({ repositories }), 'collab').letter).toBe('T')
   })
 
-  test('팀 저장소 비율과 PR + 리뷰가 모두 기준 미만이면 A', () => {
-    const repositories = [repo({ owner: 'octocat', commitDays: 76 }), repo({ owner: 'some-org', commitDays: 24 })]
-    const axis = axisOf(
-      makeActivity({ repositories, totals: { ...totals, teamPullRequests: 14, reviews: 15 } }),
-      'collab',
-    )
-    expect(axis.letter).toBe('A')
-    expect(axis.evidence).toBe('76% (내 저장소 커밋 · 팀 PR 14 · 리뷰 15)')
+  test('팀 활동 비율이 50% 미만이면 A', () => {
+    const repositories = [repo({ owner: 'octocat', commitDays: 51 }), repo({ owner: 'some-org', commitDays: 49 })]
+    expect(axisOf(makeActivity({ repositories }), 'collab').letter).toBe('A')
   })
 
-  test('팀 저장소 커밋이 적어도 팀 PR + 리뷰가 30 이상이면 T', () => {
-    const repositories = [repo({ owner: 'octocat', commitDays: 10 })]
+  test('팀 PR 과 리뷰도 팀 활동으로 한 건씩 센다', () => {
+    const repositories = [repo({ owner: 'octocat', commitDays: 60 }), repo({ owner: 'some-org', commitDays: 20 })]
+    const axis = axisOf(
+      makeActivity({ repositories, totals: { ...totals, teamPullRequests: 10, reviews: 30 } }),
+      'collab',
+    )
+    expect(axis.letter).toBe('T')
+    expect(axis.evidence).toBe('50% (팀 저장소 커밋 20일 · 팀 PR 10 · 리뷰 30)')
+  })
+
+  test('PR 과 리뷰가 많아도 내 저장소 커밋이 더 많으면 A 이고, 강조 쪽 비율이 더 크다', () => {
+    const repositories = [repo({ owner: 'octocat', commitDays: 90 })]
     const axis = axisOf(
       makeActivity({ repositories, totals: { ...totals, teamPullRequests: 10, reviews: 20 } }),
       'collab',
     )
+    expect(axis.letter).toBe('A')
+    expect(axis.score).toBeGreaterThanOrEqual(0.5)
+    expect(axis.evidence).toBe('75% (내 저장소 커밋 90일 · 팀 PR 10 · 리뷰 20)')
+  })
+
+  test('커밋 없이 리뷰만 했어도 판정한다', () => {
+    const axis = axisOf(makeActivity({ totals: { ...totals, reviews: 5 } }), 'collab')
     expect(axis.letter).toBe('T')
+    expect(axis.insufficient).toBe(false)
+  })
+
+  test('활동이 하나도 없으면 데이터 부족', () => {
+    expect(axisOf(makeActivity(), 'collab').insufficient).toBe(true)
   })
 
   test('저장소 소유자는 대소문자를 구분하지 않고 내 저장소로 본다', () => {

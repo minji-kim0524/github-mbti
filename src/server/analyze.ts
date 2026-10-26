@@ -22,10 +22,11 @@ const THRESHOLDS = {
   steady: 0.5,
   /** 가장 많이 쓴 언어 비율이 이 이상이면 F */
   focus: 0.6,
-  /** 팀 저장소(내 소유가 아닌 저장소) 커밋 비율이 이 이상이면 T */
-  team: 0.25,
-  /** 팀 저장소에 낸 PR + 리뷰 수가 이 이상이면 T */
-  teamActivity: 30,
+  /**
+   * 협업 활동 비율이 이 이상이면 T.
+   * 팀 저장소(내 소유가 아닌 저장소) 커밋한 날 + 팀 저장소 PR + 리뷰를 팀 활동으로, 내 저장소 커밋한 날을 솔로 활동으로 보고 한 건씩 센다
+   */
+  team: 0.5,
 }
 
 export type Axis = {
@@ -209,13 +210,16 @@ function scopeAxis(activity: GitHubActivity): Axis {
 function collabAxis(activity: GitHubActivity): Axis {
   const login = activity.login.toLowerCase()
   const total = activity.repositories.reduce((sum, r) => sum + r.commitDays, 0)
-  const others = activity.repositories
+  const teamCommitDays = activity.repositories
     .filter((r) => r.owner.toLowerCase() !== login)
     .reduce((sum, r) => sum + r.commitDays, 0)
-  const otherRatio = total ? others / total : 0
+  const soloCommitDays = total - teamCommitDays
   // 내 저장소에 혼자 낸 PR 은 협업이 아니므로 팀 저장소 PR 만 센다. 리뷰는 항상 다른 사람의 PR 에 하는 것이라 모두 센다
-  const teamActivity = activity.totals.teamPullRequests + activity.totals.reviews
-  const isTeam = otherRatio >= THRESHOLDS.team || teamActivity >= THRESHOLDS.teamActivity
+  const prReviews = activity.totals.teamPullRequests + activity.totals.reviews
+  const teamActivity = teamCommitDays + prReviews
+  const all = teamActivity + soloCommitDays
+  const ratio = all ? teamActivity / all : 0
+  const isTeam = ratio >= THRESHOLDS.team
   const prReview = `팀 PR ${activity.totals.teamPullRequests} · 리뷰 ${activity.totals.reviews}`
   return {
     key: 'collab',
@@ -225,11 +229,11 @@ function collabAxis(activity: GitHubActivity): Axis {
     trait: isTeam ? '팀 플레이어형' : '솔로 플레이어형',
     left: { letter: 'A', name: '솔로 플레이어형' },
     right: { letter: 'T', name: '팀 플레이어형' },
-    score: 1 - otherRatio,
+    score: 1 - ratio,
     evidence: isTeam
-      ? `${percent(otherRatio)} (팀 저장소 커밋 · ${prReview})`
-      : `${percent(1 - otherRatio)} (내 저장소 커밋 · ${prReview})`,
-    insufficient: total === 0 && teamActivity === 0,
+      ? `${percent(ratio)} (팀 저장소 커밋 ${teamCommitDays}일 · ${prReview})`
+      : `${percent(1 - ratio)} (내 저장소 커밋 ${soloCommitDays}일 · ${prReview})`,
+    insufficient: all === 0,
   }
 }
 
