@@ -1,4 +1,4 @@
-import { waitUntil } from '@vercel/functions'
+import { getCache, waitUntil } from '@vercel/functions'
 import { Hono, type Context } from 'hono'
 import { validator } from 'hono/validator'
 import { analyze, isValidTimeZone } from './analyze.js'
@@ -10,6 +10,13 @@ const GITHUB_LOGIN = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/
 
 /** GitHub API 결과 캐시 기간. 새 커밋이 1시간 안에 반영되게 하면서 rate limit 을 아낀다. */
 const CACHE_TTL_MS = 60 * 60 * 1000
+/**
+ * Vercel Runtime Cache 에 조회 결과를 남겨 두는 기간(초). 배포·인스턴스가 바뀌어도 남아 있어,
+ * 1시간이 지난 결과도 일단 바로 보여 주고 새 결과는 뒤에서 받아 바꿔 둔다. 오래 조회되지 않은 아이디만 지워진다
+ */
+const STORED_TTL_S = 7 * 24 * 60 * 60
+/** 1시간이 지난 결과를 돌려준 뒤, 뒤에서 새로 받은 결과를 다시 읽기까지 메모리에 두는 시간 */
+const STALE_RECHECK_MS = 60 * 1000
 // 1시간 동안은 캐시를 그대로 쓰고, 그 뒤 하루 동안은 이전 카드를 바로 보여 주면서 뒤에서 새로 만든다
 const CARD_CACHE_CONTROL = 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400'
 const ERROR_CACHE_CONTROL = 'public, max-age=300'
@@ -29,7 +36,6 @@ const MAX_TRACKED_CLIENTS = 5000
 /** 오류 메시지에 되돌려 보여 줄 tz 의 최대 길이 */
 const MAX_ECHO_LENGTH = 40
 
-// 서버 메모리 캐시 (login 소문자 → 조회 결과). 같은 사용자의 동시 요청은 하나의 Promise 를 공유한다.
 const UNMEASURABLE_MESSAGE = '최근 1년 공개 활동이 없어 MBTI를 측정할 수 없어요.'
 
 /**
@@ -73,6 +79,42 @@ function consumeLookup(client: string): boolean {
   return entry.count <= LOOKUP_LIMIT
 }
 
+type StoredActivity = { savedAt: number; activity: GitHubActivity }
+
+// 인스턴스·배포가 달라도 함께 쓰는 조회 결과 저장소 (login 소문자 → 조회 결과와 시각). 로컬에서는 메모리로 대신한다
+const store = getCache({ namespace: 'activity' })
+
+async function readStored(key: string): Promise<StoredActivity | undefined> {
+  try {
+    return ((await store.get(key)) as StoredActivity | null) ?? undefined
+  } catch (error) {
+    // 저장소를 못 읽으면 GitHub 에서 새로 조회한다
+    console.error(error)
+    return undefined
+  }
+}
+
+async function fetchAndStore(login: string, key: string, token: string): Promise<StoredActivity> {
+  const stored = { savedAt: Date.now(), activity: await fetchGitHubActivity(login, token) }
+  // 저장에 실패해도 이번 조회 결과는 그대로 쓴다
+  await store.set(key, stored, { ttl: STORED_TTL_S, name: 'github-activity' }).catch(console.error)
+  return stored
+}
+
+async function loadActivity(login: string, key: string, token: string, client: string): Promise<StoredActivity> {
+  const stored = await readStored(key)
+  if (stored) {
+    // 1시간이 지난 결과는 일단 그대로 쓰고, 새 결과는 응답과 상관없이 뒤에서 받아 저장해 둔다
+    if (Date.now() - stored.savedAt > CACHE_TTL_MS) {
+      waitUntil(fetchAndStore(login, key, token).catch(console.error))
+    }
+    return stored
+  }
+  if (!consumeLookup(client)) throw new RateLimitedError()
+  return fetchAndStore(login, key, token)
+}
+
+// 서버 메모리 캐시 (login 소문자 → 조회 결과). 같은 사용자의 동시 요청은 하나의 Promise 를 공유한다.
 const activityCache = new Map<string, { expiresAt: number; promise: Promise<GitHubActivity> }>()
 
 function getActivity(login: string, client: string): Promise<GitHubActivity> {
@@ -82,16 +124,20 @@ function getActivity(login: string, client: string): Promise<GitHubActivity> {
   const key = login.toLowerCase()
   const cached = activityCache.get(key)
   if (cached && cached.expiresAt > Date.now()) return cached.promise
-  if (!consumeLookup(client)) throw new RateLimitedError()
 
-  const promise = fetchGitHubActivity(login, token)
+  const loaded = loadActivity(login, key, token, client)
+  const entry = { expiresAt: Date.now() + CACHE_TTL_MS, promise: loaded.then((stored) => stored.activity) }
   // 만료된 항목을 덮어쓰면 예전 순서가 유지돼 정리 때 가장 먼저 지워지므로, 지운 뒤 맨 뒤에 다시 넣는다
   activityCache.delete(key)
-  activityCache.set(key, { expiresAt: Date.now() + CACHE_TTL_MS, promise })
+  activityCache.set(key, entry)
   prune(activityCache, MAX_CACHED_USERS, (e) => e.expiresAt <= Date.now())
-  // 실패한 결과는 캐시하지 않는다
-  promise.catch(() => activityCache.delete(key))
-  return promise
+  loaded.then(
+    // 저장해 둔 지 1시간이 지난 결과였다면, 뒤에서 새로 받은 결과를 곧 다시 읽도록 메모리에는 잠깐만 둔다
+    (stored) => (entry.expiresAt = Math.max(stored.savedAt + CACHE_TTL_MS, Date.now() + STALE_RECHECK_MS)),
+    // 실패한 결과는 캐시하지 않는다
+    () => activityCache.delete(key),
+  )
+  return entry.promise
 }
 
 /** ms 안에 끝나면 결과를, 아니면 undefined 를 돌려준다. 원래 작업은 멈추지 않는다 */

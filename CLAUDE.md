@@ -54,7 +54,7 @@ vercel.json    Vercel 설정 (/api/* → api/index.ts 로 rewrite)
 api/index.ts   Vercel Function 진입점 (src/server/app.ts 를 default export)
 src/web/       랜딩: README 스니펫 템플릿({githubID}, 직접 고른 tz) 복사 + 아이디 입력 시 카드 미리보기
 src/server/
-  app.ts       Hono 라우트, 메모리 캐시, AppType export
+  app.ts       Hono 라우트, 메모리·Runtime Cache 캐시, AppType export
   github.ts    GraphQL 쿼리 2개 (기여 내역 / 상위 저장소 커밋 시각)
   analyze.ts   4축 판정 (순수 함수, 기준값·별명 모음)
   card.ts      SVG 렌더 + escapeXml
@@ -81,11 +81,12 @@ pnpm build
 
 - SVG 응답에는 `Cache-Control` 을 명시한다. 카드는 1시간(이후 하루 동안 stale-while-revalidate), 오류 카드는 5분 — GitHub camo 캐싱과 rate limit 때문.
 - README(camo)는 200 이 아니면 이미지를 깨뜨리므로, 카드 엔드포인트의 오류는 **200 + 오류 카드** 로 응답한다.
-- camo 는 약 4.2초 안에 응답이 끝나지 않으면 이미지를 깨뜨리고, 본문이 잘리면 빈 이미지를 캐싱한다. 그래서 카드 엔드포인트는 조회를 **최대 2초**만 기다리고, 넘으면 `no-store` 로 '카드를 만드는 중' 안내 카드를 보낸다. 조회는 `waitUntil`(`@vercel/functions`)로 끝까지 마쳐 메모리 캐시에 남긴다.
+- camo 는 약 4.2초 안에 응답이 끝나지 않으면 이미지를 깨뜨리고, 본문이 잘리면 빈 이미지를 캐싱한다. 그래서 카드 엔드포인트는 조회를 **최대 2초**만 기다리고, 넘으면 `no-store` 로 '카드를 만드는 중' 안내 카드를 보낸다. 조회는 `waitUntil`(`@vercel/functions`)로 끝까지 마쳐 캐시에 남긴다.
 - 웹은 미리보기 결과가 나오면 **스니펫과 똑같은 카드 주소**를 한 번 불러 CDN 캐시를 채운다(`warmCard`). 미리보기 카드 주소(`?tz=&layout=`)와 스니펫 주소는 CDN 캐시 키가 달라서, 이렇게 해야 README 에 붙여 넣은 첫 요청이 기다리지 않는다.
 - 외부 입력(GitHub 아이디, 이름, 언어명, tz 등)은 SVG에 넣기 전에 **반드시 XML 이스케이프** (`src/server/card.ts`의 `escapeXml`).
 - GraphQL 쿼리에 사용자 값을 문자열로 끼워 넣지 않는다. 항상 **변수**로 전달한다.
 - GitHub API 호출은 사용자 1명당 쿼리 2번(약 7포인트) 이내로 유지하고, 결과는 서버에서 캐싱한다 (rate limit: 토큰당 5,000포인트/시간). 캐시에 없는 아이디의 새 조회는 IP당 10분 30번으로 제한하고(`x-real-ip`), 메모리 캐시·제한 기록은 최대 항목 수를 둔다.
+- 조회 결과는 메모리 캐시 아래에 **Vercel Runtime Cache**(`getCache`, 7일 TTL)를 둔다. 배포·인스턴스가 바뀌어도 남아서 콜드 요청도 GitHub 를 다시 부르지 않는다. 저장한 지 1시간이 지난 결과는 바로 쓰고 새 결과는 `waitUntil` 로 뒤에서 받아 바꾼다 (stale-while-revalidate). 로컬·테스트에서는 `@vercel/functions` 가 메모리 캐시로 대신한다. 보관 기간을 바꾸면 README·웹의 개인정보 안내도 함께 고친다.
 - `src/web` 은 `src/server` 에서 `import type` 만 한다 (서버 런타임 코드가 웹 번들에 섞이지 않게).
 - 판정 기준값·축 이름·별명은 `src/server/analyze.ts` 에 모아 두고, 판정 함수는 순수 함수로 유지한다.
 - `.env*` 파일(`.env.example` 포함)은 **절대 커밋하지 않는다**. 필요한 환경변수는 README에 문서화한다.
