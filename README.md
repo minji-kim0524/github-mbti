@@ -253,7 +253,7 @@ pnpm dev
 - API: http://localhost:8787
 - 카드 예시: http://localhost:5173/api/card/torvalds?tz=auto
 
-`pnpm typecheck`로 타입 검사, `pnpm build`로 배포용 빌드를 확인할 수 있습니다.
+`pnpm typecheck`로 타입 검사, `pnpm lint`로 ESLint 검사, `pnpm test`로 판정 로직 테스트(Jest), `pnpm build`로 배포용 빌드를 확인할 수 있습니다. 서식은 `pnpm format`으로 맞춰요.
 
 ### 환경변수
 

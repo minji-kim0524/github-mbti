@@ -59,6 +59,7 @@ src/server/
   analyze.ts   4축 판정 (순수 함수, 기준값·별명 모음)
   card.ts      SVG 렌더 + escapeXml
   index.ts     로컬 node 서버 (env.ts 로 .env 로드)
+__test__/      Jest 테스트 (판정 로직·카드 이스케이프). fixtures.ts 로 활동 데이터를 만든다
 ```
 
 ## 명령어
@@ -66,9 +67,15 @@ src/server/
 ```bash
 pnpm install
 pnpm dev         # web(5173) + api(8787) 동시 실행
-pnpm typecheck   # 타입 검사
+pnpm typecheck   # 타입 검사 (typescript 7)
+pnpm lint        # ESLint
+pnpm format      # Prettier 로 서식 맞추기 (검사만: pnpm format:check)
+pnpm test        # Jest (__test__/*.test.ts)
 pnpm build
 ```
+
+- `typescript-eslint` 는 TypeScript JS API 가 필요한데 typescript 7 에는 없어서, `.pnpmfile.cjs` 가 그 패키지들에만 `@typescript/typescript6` 을 연결한다. 같은 이유로 Jest 는 `ts-jest` 대신 `@swc/jest` 로 변환한다 (타입 검사는 하지 않음)
+- Prettier 서식: 기본은 세미콜론 없음·작은따옴표·120자, `src/web/App.tsx`·`index.css` 만 세미콜론·큰따옴표·80자 (`.prettierrc.json`)
 
 ## 규칙
 
