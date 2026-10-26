@@ -1,0 +1,39 @@
+# 의존성 버전 업데이트 PR 설정. 취약점 수정 PR(security updates)은 이 파일과 별개로 저장소 설정에서 켠다.
+# PR 은 CI(.github/workflows/ci.yml)를 거치므로, 통과한 것만 확인하고 합치면 된다.
+version: 2
+updates:
+  # pnpm 도 npm 생태계로 잡는다 (pnpm-lock.yaml·.pnpmfile.cjs 를 그대로 써서 lockfile 을 갱신)
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Seoul
+    # 새로 나온 버전은 3일 지켜본 뒤 올린다 (배포 직후 문제가 생긴 버전·공급망 공격 대비)
+    cooldown:
+      default-days: 3
+    # minor·patch 는 개발용/서비스용으로 묶어 PR 수를 줄이고, major 는 깨질 수 있어 패키지별로 따로 받는다
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
+      dependencies:
+        dependency-type: production
+        update-types: [minor, patch]
+    commit-message:
+      prefix: chore
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Seoul
+    groups:
+      github-actions:
+        patterns: ['*']
+    commit-message:
+      prefix: chore
