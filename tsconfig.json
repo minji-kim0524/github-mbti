@@ -15,5 +15,5 @@
     "typeRoots": ["./node_modules/@types"],
     "types": ["node"]
   },
-  "include": ["api", "scripts", "src", "vite.config.ts"]
+  "include": ["api", "scripts", "src", "__test__", "vite.config.ts"]
 }
