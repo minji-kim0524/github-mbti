@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm 
+
+      - name: 의존성 설치
+        run: pnpm install --frozen-lockfile
+      - name: 서식 검사
+        run: pnpm format:check
+      - name: Lint
+        run: pnpm lint
+      - name: 타입 검사
+        run: pnpm typecheck
+      - name: 테스트
+        run: pnpm test
+      - name: 아이콘 모듈 최신 여부
+        run: pnpm icons && git diff --exit-code -- src/server/icons.ts
+      - name: 빌드
+        run: pnpm build
+      - name: 번들 토큰 유출 검사
+        run: |
+          if grep -rqE 'gh[pousr]_[A-Za-z0-9]{20,}|github_pat_' dist; then
+            echo "::error::dist 에 GitHub 토큰 형태의 문자열이 있어요 (값은 출력하지 않아요)"
+            exit 1
+          fi
