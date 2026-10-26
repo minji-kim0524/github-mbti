@@ -1,14 +1,20 @@
 import { afterEach, beforeAll, describe, expect, jest, test } from '@jest/globals'
-import type { GitHubActivity } from '../src/server/github.js'
+import type { GitHubActivity, GitHubRateLimit } from '../src/server/github.js'
 import { calendarOf, commitsAt, makeActivity, repo } from './fixtures.js'
 
 type App = (typeof import('../src/server/app.js'))['default']
 
-const fetchGitHubActivity = jest.fn<(login: string, token: string) => Promise<GitHubActivity>>()
+type OnRateLimit = (rateLimit: GitHubRateLimit) => void
+const fetchGitHubActivity =
+  jest.fn<(login: string, token: string, onRateLimit?: OnRateLimit) => Promise<GitHubActivity>>()
+// 테스트에서 던진 오류를 app.ts 가 instanceof 로 알아보도록 같은 클래스를 쓴다
+class MockGitHubRateLimitedError extends Error {}
 // github.ts 가 불러오는 @octokit/graphql 은 ESM 전용이라 Jest(CJS)에서 읽을 수 없으므로, app.ts 가 쓰는 것만 대신 만든다
 jest.mock('../src/server/github.js', () => ({
-  fetchGitHubActivity: (login: string, token: string) => fetchGitHubActivity(login, token),
+  fetchGitHubActivity: (login: string, token: string, onRateLimit?: OnRateLimit) =>
+    fetchGitHubActivity(login, token, onRateLimit),
   GitHubUserNotFoundError: class extends Error {},
+  GitHubRateLimitedError: MockGitHubRateLimitedError,
 }))
 
 // Vercel Runtime Cache 대신 쓰는 저장소. 앱(인스턴스)을 새로 불러와도 남아 있어 배포·인스턴스가 바뀐 상황을 흉내 낸다
@@ -109,5 +115,68 @@ describe('Runtime Cache 에 남긴 조회 결과', () => {
     await Promise.all(background)
     const saved = runtimeCache.get('stale-user') as { savedAt: number }
     expect(saved.savedAt).toBeGreaterThan(twoHoursAgo)
+  })
+})
+
+describe('GitHub 토큰 남은 포인트 기준 조회 중단', () => {
+  const inAnHour = new Date(Date.now() + 60 * 60 * 1000).toISOString()
+
+  /** 조회할 때 GitHub 가 남은 포인트를 remaining 으로 알려 준 것처럼 응답한다 */
+  const respondWith = (remaining: number, resetAt = inAnHour) =>
+    fetchGitHubActivity.mockImplementation(async (login, _token, onRateLimit) => {
+      onRateLimit?.({ remaining, resetAt })
+      return activity(login)
+    })
+
+  test('남은 포인트가 기준 이하이면 새 아이디는 조회하지 않고, 저장해 둔 아이디는 그대로 보여 준다', async () => {
+    const app = loadApp()
+    runtimeCache.set('kept-user', { savedAt: Date.now(), activity: activity('kept-user') })
+    respondWith(500)
+    await app.request('/api/card/first-user')
+    expect(fetchGitHubActivity).toHaveBeenCalledTimes(1)
+
+    const blocked = await app.request('/api/card/second-user')
+    expect(blocked.headers.get('Cache-Control')).toBe('no-store')
+    expect(await blocked.text()).toContain('요청이 너무 많아요')
+    const json = await app.request('/api/mbti/second-user')
+    expect(json.status).toBe(429)
+    expect(fetchGitHubActivity).toHaveBeenCalledTimes(1)
+
+    const kept = await app.request('/api/card/kept-user')
+    expect(kept.headers.get('Cache-Control')).toContain('max-age=3600')
+    expect(await kept.text()).toContain('kept-user')
+  })
+
+  test('포인트가 다시 채워질 시각이 지나면 새 조회를 다시 한다', async () => {
+    const app = loadApp()
+    respondWith(10, new Date(Date.now() - 1000).toISOString())
+    await app.request('/api/card/reset-first')
+    const res = await app.request('/api/card/reset-second')
+    expect(await res.text()).toContain('reset-second')
+    expect(fetchGitHubActivity).toHaveBeenCalledTimes(2)
+  })
+
+  test('남은 포인트가 아주 적으면 1시간이 지난 결과도 새로 받지 않고 그대로 쓴다', async () => {
+    const app = loadApp()
+    respondWith(100)
+    await app.request('/api/card/budget-user')
+    runtimeCache.set('old-user', { savedAt: Date.now() - 2 * 60 * 60 * 1000, activity: activity('old-user') })
+
+    const res = await app.request('/api/card/old-user')
+    expect(await res.text()).toContain('old-user')
+    expect(fetchGitHubActivity).toHaveBeenCalledTimes(1)
+  })
+
+  test('GitHub 가 한도 초과로 거절하면 안내 카드를 보내고, 한동안 새 조회를 멈춘다', async () => {
+    const app = loadApp()
+    fetchGitHubActivity.mockRejectedValue(new MockGitHubRateLimitedError())
+    const res = await app.request('/api/card/limited-user')
+    expect(res.headers.get('Cache-Control')).toBe('no-store')
+    expect(await res.text()).toContain('요청이 너무 많아요')
+
+    fetchGitHubActivity.mockReset()
+    respondWith(4000)
+    await app.request('/api/card/after-limit')
+    expect(fetchGitHubActivity).not.toHaveBeenCalled()
   })
 })

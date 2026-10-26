@@ -30,8 +30,14 @@ export type GitHubActivity = {
 }
 
 export class GitHubUserNotFoundError extends Error {}
+/** GitHub 토큰의 rate limit 을 다 써서 조회가 거절됐을 때 */
+export class GitHubRateLimitedError extends Error {}
+
+/** 토큰 전체의 남은 포인트와 다시 채워지는 시각 (GraphQL `rateLimit`) */
+export type GitHubRateLimit = { remaining: number; resetAt: string }
 
 type ContributionsResponse = {
+  rateLimit: GitHubRateLimit
   user: {
     id: string
     login: string
@@ -64,6 +70,10 @@ type ContributionsResponse = {
 
 const CONTRIBUTIONS_QUERY = /* GraphQL */ `
   query Contributions($login: String!, $from: DateTime!, $to: DateTime!) {
+    rateLimit {
+      remaining
+      resetAt
+    }
     user(login: $login) {
       id
       login
@@ -142,14 +152,21 @@ function buildHistoryQuery(count: number): string {
   return `query History($authorId: ID!, $since: GitTimestamp!, ${params}) {${fields}\n}`
 }
 
-export async function fetchGitHubActivity(login: string, token: string): Promise<GitHubActivity> {
+/**
+ * onRateLimit 은 첫 쿼리 응답의 남은 포인트를 받는다. rateLimit 필드는 쿼리 비용을 늘리지 않는다 (실측: 쿼리당 1포인트 그대로)
+ */
+export async function fetchGitHubActivity(
+  login: string,
+  token: string,
+  onRateLimit?: (rateLimit: GitHubRateLimit) => void,
+): Promise<GitHubActivity> {
   const client = graphql.defaults({ headers: { authorization: `token ${token}` } })
 
   const to = new Date()
   const from = new Date(to)
   from.setFullYear(from.getFullYear() - 1)
 
-  const { user } = await client<ContributionsResponse>(CONTRIBUTIONS_QUERY, {
+  const { rateLimit, user } = await client<ContributionsResponse>(CONTRIBUTIONS_QUERY, {
     login,
     from: from.toISOString(),
     to: to.toISOString(),
@@ -158,8 +175,12 @@ export async function fetchGitHubActivity(login: string, token: string): Promise
     if (error instanceof GraphqlResponseError && error.errors?.some((e) => e.type === 'NOT_FOUND')) {
       throw new GitHubUserNotFoundError(login)
     }
+    if (error instanceof GraphqlResponseError && error.errors?.some((e) => e.type === 'RATE_LIMITED')) {
+      throw new GitHubRateLimitedError(login)
+    }
     throw error
   })
+  onRateLimit?.(rateLimit)
   if (!user) throw new GitHubUserNotFoundError(login)
 
   const collection = user.contributionsCollection

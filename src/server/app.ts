@@ -3,7 +3,13 @@ import { Hono, type Context } from 'hono'
 import { validator } from 'hono/validator'
 import { analyze, isValidTimeZone } from './analyze.js'
 import { CARD_LAYOUTS, CARD_THEMES, renderCard, renderErrorCard } from './card.js'
-import { fetchGitHubActivity, GitHubUserNotFoundError, type GitHubActivity } from './github.js'
+import {
+  fetchGitHubActivity,
+  GitHubRateLimitedError,
+  GitHubUserNotFoundError,
+  type GitHubActivity,
+  type GitHubRateLimit,
+} from './github.js'
 
 // GitHub username 규칙: 영숫자와 하이픈, 최대 39자, 하이픈으로 시작 불가
 const GITHUB_LOGIN = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/
@@ -30,6 +36,16 @@ const NO_STORE = 'no-store'
  */
 const LOOKUP_LIMIT = 30
 const LOOKUP_WINDOW_MS = 10 * 60 * 1000
+/**
+ * GitHub 토큰의 남은 포인트가 이 값 이하이면 캐시에 없는 아이디의 새 조회를 멈춘다.
+ * IP 제한은 인스턴스마다 따로 세어 여러 IP 로 나눠 요청하면 토큰을 다 쓸 수 있으므로, GitHub 가 알려 주는 토큰 전체 기준으로 한 번 더 막는다.
+ * 새 조회는 쿼리 2번(실측 2포인트)이라, 남겨 둔 몫은 저장된 결과를 새로 받는 데 쓴다
+ */
+const NEW_LOOKUP_RESERVE_POINTS = 500
+/** 남은 포인트가 이 값 이하이면 1시간이 지난 결과도 새로 받지 않고 그대로 쓴다 */
+const REFRESH_RESERVE_POINTS = 100
+/** GitHub 가 한도 초과로 거절하면 다시 채워질 시각을 알 수 없으므로, 이 시간 동안 부르지 않는다 */
+const RATE_LIMITED_BACKOFF_MS = 10 * 60 * 1000
 /** 메모리 캐시·요청 제한 기록이 끝없이 늘지 않도록 두는 최대 항목 수 */
 const MAX_CACHED_USERS = 1000
 const MAX_TRACKED_CLIENTS = 5000
@@ -50,6 +66,18 @@ const AUTO_TIME_ZONE = 'auto'
 
 class MissingTokenError extends Error {}
 class RateLimitedError extends Error {}
+
+// GitHub 가 마지막으로 알려 준 토큰 전체의 남은 포인트. 인스턴스마다 자기 조회 응답으로 갱신한다 (아직 모르면 막지 않는다)
+let githubBudget = { remaining: Number.POSITIVE_INFINITY, resetAt: 0 }
+
+function recordRateLimit({ remaining, resetAt }: GitHubRateLimit) {
+  githubBudget = { remaining, resetAt: Date.parse(resetAt) }
+}
+
+/** 남은 포인트가 reserve 보다 많거나, 다시 채워질 시각이 지났으면 GitHub 를 불러도 된다 */
+function canCallGitHub(reserve: number): boolean {
+  return githubBudget.remaining > reserve || Date.now() >= githubBudget.resetAt
+}
 
 /** 만료된 항목을 지우고, 그래도 많으면 먼저 넣은 것부터 지운다 */
 function prune<V>(map: Map<string, V>, max: number, isExpired: (value: V) => boolean) {
@@ -95,7 +123,13 @@ async function readStored(key: string): Promise<StoredActivity | undefined> {
 }
 
 async function fetchAndStore(login: string, key: string, token: string): Promise<StoredActivity> {
-  const stored = { savedAt: Date.now(), activity: await fetchGitHubActivity(login, token) }
+  const activity = await fetchGitHubActivity(login, token, recordRateLimit).catch((error: unknown) => {
+    if (error instanceof GitHubRateLimitedError) {
+      githubBudget = { remaining: 0, resetAt: Date.now() + RATE_LIMITED_BACKOFF_MS }
+    }
+    throw error
+  })
+  const stored = { savedAt: Date.now(), activity }
   // 저장에 실패해도 이번 조회 결과는 그대로 쓴다
   await store.set(key, stored, { ttl: STORED_TTL_S, name: 'github-activity' }).catch(console.error)
   return stored
@@ -105,12 +139,13 @@ async function loadActivity(login: string, key: string, token: string, client: s
   const stored = await readStored(key)
   if (stored) {
     // 1시간이 지난 결과는 일단 그대로 쓰고, 새 결과는 응답과 상관없이 뒤에서 받아 저장해 둔다
-    if (Date.now() - stored.savedAt > CACHE_TTL_MS) {
+    if (Date.now() - stored.savedAt > CACHE_TTL_MS && canCallGitHub(REFRESH_RESERVE_POINTS)) {
       waitUntil(fetchAndStore(login, key, token).catch(console.error))
     }
     return stored
   }
-  if (!consumeLookup(client)) throw new RateLimitedError()
+  // 토큰 기준을 먼저 보아, 막힌 요청이 IP 횟수까지 쓰지 않게 한다
+  if (!canCallGitHub(NEW_LOOKUP_RESERVE_POINTS) || !consumeLookup(client)) throw new RateLimitedError()
   return fetchAndStore(login, key, token)
 }
 
@@ -181,7 +216,7 @@ async function evaluate(user: string, tz: string | undefined, client: string): P
     if (error instanceof GitHubUserNotFoundError) {
       return { ok: false, status: 404, message: `GitHub 사용자 ${user}을(를) 찾을 수 없어요.` }
     }
-    if (error instanceof RateLimitedError) {
+    if (error instanceof RateLimitedError || error instanceof GitHubRateLimitedError) {
       return { ok: false, status: 429, message: '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.' }
     }
     if (error instanceof MissingTokenError) {
