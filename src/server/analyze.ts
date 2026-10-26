@@ -9,10 +9,15 @@ export const DEFAULT_TIME_ZONE = 'Asia/Seoul'
 /** 새벽커밋형으로 보는 시간대: 20:00 ~ 04:59 */
 const NIGHT_START_HOUR = 20
 const NIGHT_END_HOUR = 5
+/** 새벽 구간 길이(9시간). 나머지 15시간이 오전·낮 구간이다 */
+const NIGHT_HOURS = 24 - NIGHT_START_HOUR + NIGHT_END_HOUR
 
 const THRESHOLDS = {
-  /** 새벽 시간대 커밋 비율이 이 이상이면 N */
-  night: 0.4,
+  /**
+   * 새벽 비율(시간당 커밋 수로 환산)이 이 이상이면 N.
+   * 새벽 구간이 하루의 37.5%뿐이라 커밋 수를 그대로 비교하면 낮 쪽이 유리하므로, 구간 길이로 나눈 밀도끼리 비교한다
+   */
+  night: 0.5,
   /** 1년 중 기여한 날 비율이 이 이상이면 S */
   steady: 0.5,
   /** 가장 많이 쓴 언어 비율이 이 이상이면 F */
@@ -36,7 +41,7 @@ export type Axis = {
   /** 왼쪽 성향 비율 0~1 */
   score: number
   /**
-   * 판정 근거 한 줄. "71% (새벽 20~05시 커밋)" 처럼 비율을 먼저 쓰고 설명은 괄호에 넣는다.
+   * 판정 근거 한 줄. "71% (시간당 커밋 수 · 새벽 20~05시 120개)" 처럼 비율을 먼저 쓰고 설명은 괄호에 넣는다.
    * 비율은 판정된 쪽 기준이라 카드에서 그쪽 끝부터 채우는 막대 길이와 같다.
    */
   evidence: string
@@ -129,7 +134,10 @@ function commitHours(activity: GitHubActivity, timeZone: string | undefined): nu
 function timeAxis(activity: GitHubActivity, timeZone: string | undefined): Axis {
   const hours = commitHours(activity, timeZone)
   const night = hours.filter((h) => h >= NIGHT_START_HOUR || h < NIGHT_END_HOUR).length
-  const ratio = hours.length ? night / hours.length : 0
+  // 구간별 시간당 커밋 수. 두 밀도의 비율이 새벽 쪽 비율이다 (예: 새벽 9시간 450개·낮 15시간 450개 → 50 : 30 → 63%)
+  const nightDensity = night / NIGHT_HOURS
+  const dayDensity = (hours.length - night) / (24 - NIGHT_HOURS)
+  const ratio = hours.length ? nightDensity / (nightDensity + dayDensity) : 0
   const isNight = ratio >= THRESHOLDS.night
   return {
     key: 'time',
@@ -143,8 +151,8 @@ function timeAxis(activity: GitHubActivity, timeZone: string | undefined): Axis 
     evidence: !hours.length
       ? '커밋 시각 데이터 부족'
       : isNight
-        ? `${percent(ratio)} (새벽 20~05시 커밋)`
-        : `${percent(1 - ratio)} (오전·낮 05~20시 커밋)`,
+        ? `${percent(ratio)} (시간당 커밋 수 · 새벽 20~05시 ${night}개)`
+        : `${percent(1 - ratio)} (시간당 커밋 수 · 오전·낮 05~20시 ${hours.length - night}개)`,
     insufficient: hours.length === 0,
   }
 }

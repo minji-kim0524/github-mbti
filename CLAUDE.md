@@ -23,7 +23,7 @@ GitHub 프로필 README는 JS를 실행하지 않으므로, github-readme-stats�
 
 | 축 | 글자 | 기준 | GraphQL 데이터 |
 | --- | --- | --- | --- |
-| 시간 | N 새벽커밋형 / D 오전배포형 | 20~05시 커밋 비율 ≥ 40% → N (자동 감지면 커밋별 현지 시각, `tz` 지정 시 그 시간대 기준) | 상위 5개 저장소 `history(author: {id})` 의 `author.date` (GitTimestamp, UTC 미변환) |
+| 시간 | N 새벽커밋형 / D 오전배포형 | 시간당 커밋 수(밀도)로 환산한 20~05시 비율 ≥ 50% → N. 새벽 9시간·낮 15시간으로 구간 길이가 달라 커밋 수를 구간 길이로 나눠 비교한다 (자동 감지면 커밋별 현지 시각, `tz` 지정 시 그 시간대 기준) | 상위 5개 저장소 `history(author: {id})` 의 `author.date` (GitTimestamp, UTC 미변환) |
 | 리듬 | S 성실한 농부형 / R 몰아치는 파도형 | 1년 중 기여한 날 비율 ≥ 50% → S | `contributionCalendar` |
 | 범위 | F 원툴장인형 / M 멀티언어형 | 커밋한 날 수로 가중한 최다 언어 비율 ≥ 60% → F | `commitContributionsByRepository` 의 `primaryLanguage` |
 | 협업 | A 솔로 플레이어형 / T 팀 플레이어형 | 팀 저장소(내 소유가 아닌 저장소) 커밋 비율 ≥ 25% 또는 팀 저장소 PR+리뷰 ≥ 30 → T (내 저장소 PR 은 제외) | 저장소 `owner`, `pullRequestContributionsByRepository`, `totalPullRequestReviewContributions` |
