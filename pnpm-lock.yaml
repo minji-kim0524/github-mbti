@@ -16,6 +16,9 @@ importers:
       '@octokit/graphql':
         specifier: ^9.0.5
         version: 9.0.5
+      '@upstash/redis':
+        specifier: ^1.40.0
+        version: 1.40.0
       '@vercel/functions':
         specifier: ^3.10.3
         version: 3.10.3(ws@8.22.0)
@@ -1269,6 +1272,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@upstash/redis@1.40.0':
+    resolution: {integrity: sha512-F6+V7Kof2McJtGWclusZLt7hBRmIMZg+albS32/5TuNRg/92FM2nkyKPY9wWEieMj9hjyUi4iURsN1djsHNbwA==}
+
   '@vercel/cli-config@0.3.3':
     resolution: {integrity: sha512-5T0ZtIFgcFHuPFuuoJKno5ZeKvLQGiS/JAFMI1zG1HBw2dklScoHdA0LDb/SoeRYD53N33iXFAqyRA0tHLhdnQ==}
 
@@ -2423,6 +2429,9 @@ packages:
     resolution: {integrity: sha512-8FYau96o3NKOhbjKi/qNvG/W5jhzxkbdm5sj9AbZ/5T5sWqn3hJgLfGx27sRKZWTvyzCP8dLRBTf5tBTSRVUNA==}
     engines: {node: '>=16.20.0'}
     hasBin: true
+
+  uncrypto@0.1.3:
+    resolution: {integrity: sha512-Ql87qFHB3s/De2ClA9e0gsnS6zXG27SkTiSJwjCc9MebbfapQfuPzumMIUMi38ezPZVNFcHI9sUIepeQfw8J8Q==}
 
   undici-types@8.9.0:
     resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
@@ -3665,6 +3674,10 @@ snapshots:
 
   '@unrs/resolver-binding-win32-x64-msvc@1.12.2':
     optional: true
+
+  '@upstash/redis@1.40.0':
+    dependencies:
+      uncrypto: 0.1.3
 
   '@vercel/cli-config@0.3.3':
     dependencies:
@@ -4954,6 +4967,8 @@ snapshots:
       '@typescript/typescript-sunos-x64': 7.0.2
       '@typescript/typescript-win32-arm64': 7.0.2
       '@typescript/typescript-win32-x64': 7.0.2
+
+  uncrypto@0.1.3: {}
 
   undici-types@8.9.0: {}
 

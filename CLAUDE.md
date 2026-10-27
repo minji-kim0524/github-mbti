@@ -3,7 +3,7 @@
 > 내 깃허브의 MBTI는 무엇일까? (*커밋 내역을 기반으로 측정됩니다.)
 
 GitHub 공개 활동(커밋 시각·잔디·언어·협업)을 분석해 4글자 개발자 유형을 SVG 카드로 보여 주는 서비스.
-**읽기 전용 + 무상태 + SVG 렌더링** 구조라 DB·로그인이 없다.
+**읽기 전용 + SVG 렌더링** 구조라 로그인이 없다. 저장하는 것은 아이디별 조회 결과(Upstash Redis)뿐이다.
 모든 응답·주석·문서는 한국어로 작성한다 (코드 식별자·기술 용어는 원문 유지).
 
 ## 동작 방식
@@ -54,7 +54,8 @@ vercel.json    Vercel 설정 (/api/* → api/index.ts 로 rewrite, dependabot/**
 api/index.ts   Vercel Function 진입점 (src/server/app.ts 를 default export)
 src/web/       랜딩: README 스니펫 템플릿({githubID}, 직접 고른 tz) 복사 + 아이디 입력 시 카드 미리보기
 src/server/
-  app.ts       Hono 라우트, 메모리·Runtime Cache 캐시, AppType export
+  app.ts       Hono 라우트, 메모리 캐시·1시간 단위 새로 조회, AppType export
+  store.ts     조회 결과 보관 (Upstash Redis, KV_REST_API_* 가 없으면 메모리)
   github.ts    GraphQL 쿼리 2개 (기여 내역 / 상위 저장소 커밋 시각)
   analyze.ts   4축 판정 (순수 함수, 기준값·별명 모음)
   card.ts      SVG 렌더 + escapeXml
@@ -79,14 +80,16 @@ pnpm build
 
 ## 규칙
 
-- SVG 응답에는 `Cache-Control` 을 명시한다. 카드는 1시간(이후 하루 동안 stale-while-revalidate), 오류 카드는 5분 — GitHub camo 캐싱과 rate limit 때문.
+- SVG 응답에는 `Cache-Control` 을 명시한다. 카드는 결과가 1시간이 되는 시점까지(1시간이 지난 결과는 1분, 이후 하루 동안 stale-while-revalidate), 오류 카드는 5분 — GitHub camo 캐싱과 rate limit 때문.
 - README(camo)는 200 이 아니면 이미지를 깨뜨리므로, 카드 엔드포인트의 오류는 **200 + 오류 카드** 로 응답한다.
-- camo 는 약 4.2초 안에 응답이 끝나지 않으면 이미지를 깨뜨리고, 본문이 잘리면 빈 이미지를 캐싱한다. 그래서 카드 엔드포인트는 조회를 **최대 1.5초**만 기다리고, 넘으면 `no-store` 로 '카드를 만드는 중' 안내 카드를 보낸다. 조회는 `waitUntil`(`@vercel/functions`)로 끝까지 마쳐 캐시에 남긴다.
+- camo 는 약 4.2초 안에 응답이 끝나지 않으면 이미지를 깨뜨리고, 본문이 잘리면 빈 이미지를 캐싱한다. 그래서 카드 엔드포인트는 조회를 **최대 1.5초**만 기다리고, 넘으면 `no-store` 로 '카드를 만드는 중' 안내 카드를 보낸다. 조회는 `waitUntil`(`@vercel/functions`)로 끝까지 마쳐 저장소에 남긴다.
 - 웹은 미리보기 결과가 나오면 **스니펫과 똑같은 카드 주소**를 한 번 불러 CDN 캐시를 채운다(`warmCard`). 미리보기 카드 주소(`?tz=&layout=`)와 스니펫 주소는 CDN 캐시 키가 달라서, 이렇게 해야 README 에 붙여 넣은 첫 요청이 기다리지 않는다.
 - 외부 입력(GitHub 아이디, 이름, 언어명, tz 등)은 SVG에 넣기 전에 **반드시 XML 이스케이프** (`src/server/card.ts`의 `escapeXml`).
 - GraphQL 쿼리에 사용자 값을 문자열로 끼워 넣지 않는다. 항상 **변수**로 전달한다.
 - GitHub API 호출은 사용자 1명당 쿼리 2번(실측 2포인트) 이내로 유지하고, 결과는 서버에서 캐싱한다 (rate limit: 토큰당 5,000포인트/시간). 캐시에 없는 아이디의 새 조회는 IP당 10분 30번으로 제한하고(`x-real-ip`), 메모리 캐시·제한 기록은 최대 항목 수를 둔다. IP 제한은 인스턴스마다 따로 세므로, Contributions 쿼리의 `rateLimit` 으로 받은 토큰 전체의 남은 포인트가 500 이하면 새 조회를, 100 이하면 1시간 지난 결과의 새로 고침을 멈춘다 (GitHub 가 `RATE_LIMITED` 로 거절하면 10분 동안 부르지 않는다).
-- 조회 결과는 메모리 캐시 아래에 **Vercel Runtime Cache**(`getCache`, 7일 TTL)를 둔다. 배포·인스턴스가 바뀌어도 남아서 콜드 요청도 GitHub 를 다시 부르지 않는다. 저장한 지 1시간이 지난 결과는 바로 쓰고 새 결과는 `waitUntil` 로 뒤에서 받아 바꾼다 (stale-while-revalidate). 로컬·테스트에서는 `@vercel/functions` 가 메모리 캐시로 대신한다. 보관 기간을 바꾸면 README·웹의 개인정보 안내도 함께 고친다.
+- 서비스 목적상 README 에 붙인 카드는 스니펫을 지우기 전까지 계속 보여야 한다. 그래서 조회 결과는 **Upstash Redis**(`src/server/store.ts`)에 **만료 없이** 보관하고, 메모리 캐시는 그 앞에 둔다. Runtime Cache 같은 임시 캐시는 오래 안 쓴 항목을 지우므로 보관용으로 쓰지 않는다.
+- 저장한 지 1시간이 지난 결과는 **기존 카드를 그대로 보여 주고**, 커밋 내역은 `waitUntil` 로 뒤에서 새로 받아 바꾼다. 같은 인스턴스는 1분에 한 번만 확인하고, 여러 인스턴스는 Redis 잠금(`SET NX`, 60초)으로 한 번만 GitHub 를 부른다. 저장소·GitHub 가 실패해도 메모리에 있는 기존 결과를 계속 보여 준다 ('만드는 중' 카드는 처음 보는 아이디에만 나온다).
+- 보관 방식이나 기간을 바꾸면 README·웹의 개인정보 안내도 함께 고친다.
 - `src/web` 은 `src/server` 에서 `import type` 만 한다 (서버 런타임 코드가 웹 번들에 섞이지 않게).
 - 판정 기준값·축 이름·별명은 `src/server/analyze.ts` 에 모아 두고, 판정 함수는 순수 함수로 유지한다.
 - Dependabot 브랜치는 Vercel 이 빌드하지 않는다(`vercel.json` 의 `git.deploymentEnabled`). 검토 전 의존성 코드가 `GITHUB_TOKEN` 이 있는 프리뷰 빌드에서 실행되지 않게 하려는 것이므로 이 설정을 지우지 않는다.

@@ -1,30 +1,25 @@
-import { getCache, waitUntil } from '@vercel/functions'
+import { waitUntil } from '@vercel/functions'
 import { Hono, type Context } from 'hono'
 import { validator } from 'hono/validator'
 import { analyze, isValidTimeZone } from './analyze.js'
 import { CARD_LAYOUTS, CARD_THEMES, renderCard, renderErrorCard } from './card.js'
-import {
-  fetchGitHubActivity,
-  GitHubRateLimitedError,
-  GitHubUserNotFoundError,
-  type GitHubActivity,
-  type GitHubRateLimit,
-} from './github.js'
+import { fetchGitHubActivity, GitHubRateLimitedError, GitHubUserNotFoundError, type GitHubRateLimit } from './github.js'
+import { createActivityStore, type StoredActivity } from './store.js'
 
 // GitHub username 규칙: 영숫자와 하이픈, 최대 39자, 하이픈으로 시작 불가
 const GITHUB_LOGIN = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/
 
-/** GitHub API 결과 캐시 기간. 새 커밋이 1시간 안에 반영되게 하면서 rate limit 을 아낀다. */
-const CACHE_TTL_MS = 60 * 60 * 1000
 /**
- * Vercel Runtime Cache 에 조회 결과를 남겨 두는 기간(초). 배포·인스턴스가 바뀌어도 남아 있어,
- * 1시간이 지난 결과도 일단 바로 보여 주고 새 결과는 뒤에서 받아 바꿔 둔다. 오래 조회되지 않은 아이디만 지워진다
+ * 저장한 결과를 최신으로 보는 기간. 이보다 오래된 결과는 기존 카드를 그대로 보여 주면서,
+ * 뒤에서 GitHub 커밋 내역을 새로 받아 바뀐 내용을 반영한다 (새 커밋이 1시간 단위로 반영되게 하면서 rate limit 을 아낀다)
  */
-const STORED_TTL_S = 7 * 24 * 60 * 60
-/** 1시간이 지난 결과를 돌려준 뒤, 뒤에서 새로 받은 결과를 다시 읽기까지 메모리에 두는 시간 */
+const FRESH_MS = 60 * 60 * 1000
+/** 오래된 결과를 보여 줄 때 다시 확인하는 간격. 다른 인스턴스가 새로 받아 저장했는지도 이 간격으로 다시 읽는다 */
 const STALE_RECHECK_MS = 60 * 1000
-// 1시간 동안은 캐시를 그대로 쓰고, 그 뒤 하루 동안은 이전 카드를 바로 보여 주면서 뒤에서 새로 만든다
-const CARD_CACHE_CONTROL = 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400'
+/** 같은 아이디를 GitHub 에서 새로 받는 동안 다른 인스턴스가 중복으로 받지 않도록 맡아 두는 시간(초) */
+const REFRESH_CLAIM_S = 60
+/** 캐시 기간이 지난 뒤 하루 동안은 CDN 이 이전 카드를 바로 보여 주면서 뒤에서 새로 만든다 */
+const STALE_WHILE_REVALIDATE_S = 24 * 60 * 60
 const ERROR_CACHE_CONTROL = 'public, max-age=300'
 // 요청 제한 응답은 CDN 에 남으면 다른 사람에게도 보이므로 캐싱하지 않는다
 const NO_STORE = 'no-store'
@@ -46,7 +41,7 @@ const NEW_LOOKUP_RESERVE_POINTS = 500
 const REFRESH_RESERVE_POINTS = 100
 /** GitHub 가 한도 초과로 거절하면 다시 채워질 시각을 알 수 없으므로, 이 시간 동안 부르지 않는다 */
 const RATE_LIMITED_BACKOFF_MS = 10 * 60 * 1000
-/** 메모리 캐시·요청 제한 기록이 끝없이 늘지 않도록 두는 최대 항목 수 */
+/** 메모리 캐시·요청 제한 기록이 끝없이 늘지 않도록 두는 최대 항목 수 (전체 결과는 저장소에 남아 있다) */
 const MAX_CACHED_USERS = 1000
 const MAX_TRACKED_CLIENTS = 5000
 /** 오류 메시지에 되돌려 보여 줄 tz 의 최대 길이 */
@@ -107,16 +102,14 @@ function consumeLookup(client: string): boolean {
   return entry.count <= LOOKUP_LIMIT
 }
 
-type StoredActivity = { savedAt: number; activity: GitHubActivity }
-
-// 인스턴스·배포가 달라도 함께 쓰는 조회 결과 저장소 (login 소문자 → 조회 결과와 시각). 로컬에서는 메모리로 대신한다
-const store = getCache({ namespace: 'activity' })
+// 아이디(소문자) → 조회 결과와 저장 시각. 만료 없이 계속 보관해 README 에 붙인 카드가 오래 조회되지 않아도 남아 있게 한다
+const store = createActivityStore()
 
 async function readStored(key: string): Promise<StoredActivity | undefined> {
   try {
-    return ((await store.get(key)) as StoredActivity | null) ?? undefined
+    return await store.get(key)
   } catch (error) {
-    // 저장소를 못 읽으면 GitHub 에서 새로 조회한다
+    // 저장소를 못 읽으면 메모리에 있는 결과를 쓰거나 GitHub 에서 새로 조회한다
     console.error(error)
     return undefined
   }
@@ -131,48 +124,104 @@ async function fetchAndStore(login: string, key: string, token: string): Promise
   })
   const stored = { savedAt: Date.now(), activity }
   // 저장에 실패해도 이번 조회 결과는 그대로 쓴다
-  await store.set(key, stored, { ttl: STORED_TTL_S, name: 'github-activity' }).catch(console.error)
+  await store.set(key, stored).catch(console.error)
   return stored
 }
 
-async function loadActivity(login: string, key: string, token: string, client: string): Promise<StoredActivity> {
+/** 메모리에 없는 아이디: 저장소에 있으면 그대로 쓰고, 처음 보는 아이디만 GitHub 에서 조회한다 */
+async function loadFirst(login: string, key: string, token: string, client: string): Promise<StoredActivity> {
   const stored = await readStored(key)
-  if (stored) {
-    // 1시간이 지난 결과는 일단 그대로 쓰고, 새 결과는 응답과 상관없이 뒤에서 받아 저장해 둔다
-    if (Date.now() - stored.savedAt > CACHE_TTL_MS && canCallGitHub(REFRESH_RESERVE_POINTS)) {
-      waitUntil(fetchAndStore(login, key, token).catch(console.error))
-    }
-    return stored
-  }
+  if (stored) return stored
   // 토큰 기준을 먼저 보아, 막힌 요청이 IP 횟수까지 쓰지 않게 한다
   if (!canCallGitHub(NEW_LOOKUP_RESERVE_POINTS) || !consumeLookup(client)) throw new RateLimitedError()
   return fetchAndStore(login, key, token)
 }
 
-// 서버 메모리 캐시 (login 소문자 → 조회 결과). 같은 사용자의 동시 요청은 하나의 Promise 를 공유한다.
-const activityCache = new Map<string, { expiresAt: number; promise: Promise<GitHubActivity> }>()
+/** 최신 결과를 받아 온다. 다른 인스턴스가 이미 새로 받아 두었거나 받는 중이면 GitHub 를 부르지 않는다 */
+async function refresh(login: string, key: string, token: string): Promise<StoredActivity | undefined> {
+  const latest = await readStored(key)
+  if (latest && Date.now() - latest.savedAt <= FRESH_MS) return latest
+  if (!canCallGitHub(REFRESH_RESERVE_POINTS)) return latest
+  const claimed = await store.claimRefresh(key, REFRESH_CLAIM_S).catch((error: unknown) => {
+    // 저장소에 문제가 있어도 새로 받는 것은 막지 않는다
+    console.error(error)
+    return true
+  })
+  if (!claimed) return latest
+  return fetchAndStore(login, key, token)
+}
 
-function getActivity(login: string, client: string): Promise<GitHubActivity> {
+type MemoryEntry = {
+  /** 가장 최근에 받은 결과. 오래돼도 지우지 않고, 새 결과를 받기 전까지 그대로 보여 준다 */
+  stored?: StoredActivity
+  /** 처음 불러오는 중인 결과. 같은 아이디의 동시 요청이 함께 기다린다 */
+  loading?: Promise<StoredActivity>
+  /** 뒤에서 최신 결과를 받는 중인 작업 */
+  refreshing?: Promise<void>
+  /** 마지막으로 최신 결과를 확인한 시각 */
+  checkedAt: number
+}
+
+// 서버 메모리 캐시 (아이디 소문자 → 결과). 저장소 앞에 두어 같은 인스턴스의 반복 요청을 빠르게 처리한다
+const memory = new Map<string, MemoryEntry>()
+
+/** 저장한 지 1시간이 지난 결과면 응답은 기존 결과로 하고, 최신 결과는 뒤에서 받아 바꿔 둔다 (1분에 한 번만 확인) */
+function revalidateIfStale(login: string, key: string, token: string, entry: MemoryEntry) {
+  const now = Date.now()
+  if (!entry.stored || now - entry.stored.savedAt <= FRESH_MS) return
+  if (entry.refreshing || now - entry.checkedAt < STALE_RECHECK_MS) return
+  entry.checkedAt = now
+  entry.refreshing = refresh(login, key, token)
+    .then((latest) => {
+      if (latest && latest.savedAt > (entry.stored?.savedAt ?? 0)) entry.stored = latest
+    })
+    // 새로 받지 못하면 기존 결과를 계속 보여 준다
+    .catch(console.error)
+    .finally(() => (entry.refreshing = undefined))
+  waitUntil(entry.refreshing)
+}
+
+function getStored(login: string, client: string): Promise<StoredActivity> {
   const token = process.env.GITHUB_TOKEN
   if (!token) throw new MissingTokenError()
 
   const key = login.toLowerCase()
-  const cached = activityCache.get(key)
-  if (cached && cached.expiresAt > Date.now()) return cached.promise
+  const existing = memory.get(key)
+  // 최근에 쓴 항목이 정리 때 늦게 지워지도록 맨 뒤로 옮긴다
+  if (existing) {
+    memory.delete(key)
+    memory.set(key, existing)
+  }
+  if (existing?.stored) {
+    revalidateIfStale(login, key, token, existing)
+    return Promise.resolve(existing.stored)
+  }
+  if (existing?.loading) return existing.loading
 
-  const loaded = loadActivity(login, key, token, client)
-  const entry = { expiresAt: Date.now() + CACHE_TTL_MS, promise: loaded.then((stored) => stored.activity) }
-  // 만료된 항목을 덮어쓰면 예전 순서가 유지돼 정리 때 가장 먼저 지워지므로, 지운 뒤 맨 뒤에 다시 넣는다
-  activityCache.delete(key)
-  activityCache.set(key, entry)
-  prune(activityCache, MAX_CACHED_USERS, (e) => e.expiresAt <= Date.now())
-  loaded.then(
-    // 저장해 둔 지 1시간이 지난 결과였다면, 뒤에서 새로 받은 결과를 곧 다시 읽도록 메모리에는 잠깐만 둔다
-    (stored) => (entry.expiresAt = Math.max(stored.savedAt + CACHE_TTL_MS, Date.now() + STALE_RECHECK_MS)),
-    // 실패한 결과는 캐시하지 않는다
-    () => activityCache.delete(key),
+  const entry: MemoryEntry = { checkedAt: 0 }
+  memory.set(key, entry)
+  prune(memory, MAX_CACHED_USERS, () => false)
+  entry.loading = loadFirst(login, key, token, client).then(
+    (stored) => {
+      entry.stored = stored
+      entry.loading = undefined
+      revalidateIfStale(login, key, token, entry)
+      return stored
+    },
+    (error: unknown) => {
+      // 실패한 결과는 캐시하지 않는다
+      if (memory.get(key) === entry) memory.delete(key)
+      throw error
+    },
   )
-  return entry.promise
+  return entry.loading
+}
+
+/** 결과가 최신인 동안만 캐싱하고, 오래된 결과는 1분만 캐싱해 뒤에서 받은 새 결과로 곧 바뀌게 한다 */
+function resultCacheControl(savedAt: number): string {
+  const fresh = Math.ceil((savedAt + FRESH_MS - Date.now()) / 1000)
+  const maxAge = Math.max(fresh, STALE_RECHECK_MS / 1000)
+  return `public, max-age=${maxAge}, s-maxage=${maxAge}, stale-while-revalidate=${STALE_WHILE_REVALIDATE_S}`
 }
 
 /** ms 안에 끝나면 결과를, 아니면 undefined 를 돌려준다. 원래 작업은 멈추지 않는다 */
@@ -189,7 +238,8 @@ async function within<T>(promise: Promise<T>, ms: number): Promise<T | undefined
 }
 
 type Outcome =
-  { ok: true; result: ReturnType<typeof analyze> } | { ok: false; status: 400 | 404 | 429 | 500; message: string }
+  | { ok: true; result: ReturnType<typeof analyze>; savedAt: number }
+  | { ok: false; status: 400 | 404 | 429 | 500; message: string }
 
 /** 오류 응답의 캐시 정책. 요청 제한은 요청한 사람에게만 해당하므로 캐싱하지 않는다 */
 function errorCacheControl(status: number): string {
@@ -211,7 +261,8 @@ async function evaluate(user: string, tz: string | undefined, client: string): P
     return { ok: false, status: 400, message: `알 수 없는 시간대예요: ${shown}` }
   }
   try {
-    return { ok: true, result: analyze(await getActivity(user, client), timeZone) }
+    const stored = await getStored(user, client)
+    return { ok: true, result: analyze(stored.activity, timeZone), savedAt: stored.savedAt }
   } catch (error) {
     if (error instanceof GitHubUserNotFoundError) {
       return { ok: false, status: 404, message: `GitHub 사용자 ${user}을(를) 찾을 수 없어요.` }
@@ -241,7 +292,7 @@ const app = new Hono()
         return c.json({ error: outcome.message }, outcome.status)
       }
       // 같은 아이디·시간대 요청은 CDN 이 응답해 함수 실행과 GitHub 조회를 줄인다
-      c.header('Cache-Control', CARD_CACHE_CONTROL)
+      c.header('Cache-Control', resultCacheControl(outcome.savedAt))
       return c.json(outcome.result)
     },
   )
@@ -249,7 +300,7 @@ const app = new Hono()
     // README에서 `/api/card/minji.svg` 형태로도 쓸 수 있게 확장자 허용
     const user = c.req.param('user').replace(/\.svg$/, '')
     const pending = evaluate(user, c.req.query('tz'), clientKey(c))
-    // 시간 안에 못 끝내고 먼저 응답하더라도 조회는 끝까지 마쳐 메모리 캐시에 남긴다 (Vercel 이 아니면 아무 일도 하지 않는다)
+    // 시간 안에 못 끝내고 먼저 응답하더라도 조회는 끝까지 마쳐 저장소에 남긴다 (Vercel 이 아니면 아무 일도 하지 않는다)
     waitUntil(pending)
     const outcome = await within(pending, CARD_TIME_BUDGET_MS)
     // layout=compact 는 좁은 화면용 세로 배치. 모르는 값은 무시하고 기본(wide) 배치로 그린다
@@ -277,7 +328,7 @@ const app = new Hono()
       c.header('Cache-Control', ERROR_CACHE_CONTROL)
       return c.body(renderErrorCard(UNMEASURABLE_MESSAGE, theme))
     }
-    c.header('Cache-Control', CARD_CACHE_CONTROL)
+    c.header('Cache-Control', resultCacheControl(outcome.savedAt))
     return c.body(renderCard(outcome.result, layout, theme))
   })
 
