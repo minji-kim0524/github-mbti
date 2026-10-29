@@ -1,5 +1,6 @@
 {
   "name": "github-mbti",
+  "description": "GitHub 공개 활동(커밋 시각·잔디·언어·협업)을 분석해 4글자 개발자 유형을 README용 SVG 카드로 보여 주는 서비스",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.14.0",
