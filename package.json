@@ -17,7 +17,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@hono/node-server": "^2.1.5",
+    "@hono/node-server": "^2.1.6",
     "@octokit/graphql": "^9.0.5",
     "@upstash/redis": "^1.40.0",
     "@vercel/functions": "^3.10.3",
